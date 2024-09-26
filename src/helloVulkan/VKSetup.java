@@ -182,6 +182,7 @@ public class VKSetup {
     public VkQueue transferQueue;
     public long commandPool;
     public long transferCommandPool;
+    public QueueFamilyIndices queueIndicies;
     
     public boolean FORCE_TRANSFER_QUEUE = true;
     
@@ -231,12 +232,12 @@ public class VKSetup {
 
     }
 
-    private class QueueFamilyIndices {
+    public class QueueFamilyIndices {
 
         // We use Integer to use null as the empty value
-        private Integer graphicsFamily;
-        private Integer presentFamily;
-        private Integer transferFamily;
+    	public Integer graphicsFamily;
+        public Integer presentFamily;
+        public Integer transferFamily;
 
         private boolean isComplete() {
             return graphicsFamily != null && presentFamily != null && transferFamily != null;
@@ -343,7 +344,6 @@ public class VKSetup {
         try(MemoryStack stack = stackPush()) {
 
         	// Part 1: pool for graphics queue
-            QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
 
             // God i wish this shiz was easier to read.
             VkCommandPoolCreateInfo poolInfo = VkCommandPoolCreateInfo.calloc(stack);
@@ -351,7 +351,7 @@ public class VKSetup {
             // Important: VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT (i had bugs lol)
             poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
             // graphics family
-            poolInfo.queueFamilyIndex(queueFamilyIndices.graphicsFamily);
+            poolInfo.queueFamilyIndex(queueIndicies.graphicsFamily);
             
             // create our command pool vk
             LongBuffer pCommandPool = stack.mallocLong(1);
@@ -362,7 +362,7 @@ public class VKSetup {
             commandPool = pCommandPool.get(0);
 
             // ===> Part 2: Create the transfer command pool <===
-            poolInfo.queueFamilyIndex(queueFamilyIndices.transferFamily);
+            poolInfo.queueFamilyIndex(queueIndicies.transferFamily);
 //            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
             
             // Tell Vulkan that the buffers of this pool will be constantly rerecorded
@@ -400,6 +400,7 @@ public class VKSetup {
         try(MemoryStack stack = stackPush()) {
 
             QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+            queueIndicies = indices;
 
             int[] uniqueQueueFamilies = indices.unique();
 
@@ -523,11 +524,10 @@ public class VKSetup {
             createInfo.imageArrayLayers(1);
             createInfo.imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-            QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
-            if(!indices.graphicsFamily.equals(indices.presentFamily)) {
+            if(!queueIndicies.graphicsFamily.equals(queueIndicies.presentFamily)) {
                 createInfo.imageSharingMode(VK_SHARING_MODE_CONCURRENT);
-                createInfo.pQueueFamilyIndices(stack.ints(indices.graphicsFamily, indices.presentFamily));
+                createInfo.pQueueFamilyIndices(stack.ints(queueIndicies.graphicsFamily, queueIndicies.presentFamily));
             } else {
                 createInfo.imageSharingMode(VK_SHARING_MODE_EXCLUSIVE);
             }
@@ -597,7 +597,6 @@ public class VKSetup {
 
 
     private boolean isDeviceSuitable(VkPhysicalDevice device) {
-        QueueFamilyIndices indices = findQueueFamilies(device);
 
         boolean extensionsSupported = checkDeviceExtensionSupport(device);
         boolean swapChainAdequate = false;
@@ -617,7 +616,7 @@ public class VKSetup {
             }
         }
 
-        return indices.isComplete() && extensionsSupported && swapChainAdequate && integrated;
+        return queueIndicies.isComplete() && extensionsSupported && swapChainAdequate && integrated;
     }
 
 

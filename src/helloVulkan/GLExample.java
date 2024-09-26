@@ -47,7 +47,7 @@ public class GLExample {
     	// buffer is bound when vertexAttribPointer is called.
 	}
 
-    final static int NUM_VERTICES = 10000;
+    final static int NUM_VERTICES = 3;
 
 	private Vertex[] vertices = new Vertex[NUM_VERTICES];
 	
@@ -85,33 +85,43 @@ public class GLExample {
         }
     }
 	
-	int vertexBuffer;
+	int[] vertexBuffer = new int[3];
 	
 	public void run() {
 		gl = new GL2VK();
     	createVertices(vertices);
     	
     	// Gen buffers
-    	IntBuffer out = IntBuffer.allocate(1);
-    	gl.glGenBuffers(1, out);
-    	vertexBuffer = out.get(0);
+    	IntBuffer out = IntBuffer.allocate(vertices.length);
+    	gl.glGenBuffers(vertices.length, out);
+    	vertexBuffer = out.array();
     	
-    	
+    	int buffindex = 0;
 
     	int size = vertices.length*Vertex.SIZEOF;
     	ByteBuffer buff = ByteBuffer.allocate(size);
     	while (!gl.shouldClose()) {
         	// Buffer data
+    		gl.beginRecord();
+
         	createVertices(vertices);
         	buff.rewind();
     		memcpy(buff, vertices);
-        	
-        	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
+    		
+        	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer[buffindex]);
         	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
-
-    		gl.beginRecord();
-    		gl.glDrawArrays(vertexBuffer, 0, vertices.length);
+    		
+    		// Throttle
+        	for (int i = 0; i < 100000; i++) {
+	    		gl.glDrawArrays(vertexBuffer[buffindex], 0, vertices.length);
+        	}
+        	
+    		buffindex++;
+    		if (buffindex >= vertices.length) buffindex = 0;
+    		
+    		
     		gl.endRecord();
+    		
     	}
 	}
 	

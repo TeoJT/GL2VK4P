@@ -80,11 +80,9 @@ public class GL2VK {
 	
 	
 	//     Placeholders for testing
-	
 	public boolean shouldClose() {
 		return system.shouldClose();
 	}
-	
 	
 	public void beginRecord() {
 		system.beginRecord();

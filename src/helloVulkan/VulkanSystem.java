@@ -76,7 +76,8 @@ public class VulkanSystem {
     
     public VKSetup vkbase;
 
-	VertexAttribsBinding vertexAttribs = null;
+	private VertexAttribsBinding vertexAttribs = null;
+    private VkCommandBuffer[][] secondaryCommandBuffers;
     
 
     // ======= METHODS ======= //
@@ -418,6 +419,8 @@ public class VulkanSystem {
             }
         }
     }
+    
+    
 
     private void createSyncObjects() {
 
@@ -549,15 +552,21 @@ public class VulkanSystem {
         
         submitAndPresent();
     }
-    
-    // TODO: take in list of longs
+
+    // NOT thread safe!
     public void drawArrays(long id, int size, int first) {
+        drawArrays(currentCommandBuffer, id, size, first);
+    }
+
+    // TODO: take in list of longs
+    // This method is thread safe
+    public void drawArrays(VkCommandBuffer cmdbuffer, long id, int size, int first) {
         try(MemoryStack stack = stackPush()) {
 	        LongBuffer vertexBuffers = stack.longs(id);
 	        LongBuffer offsets = stack.longs(0);
-	        vkCmdBindVertexBuffers(currentCommandBuffer, 0, vertexBuffers, offsets);
+	        vkCmdBindVertexBuffers(cmdbuffer, 0, vertexBuffers, offsets);
 	
-	        vkCmdDraw(currentCommandBuffer, size, 1, first, 0);
+	        vkCmdDraw(cmdbuffer, size, 1, first, 0);
         }
     }
     
