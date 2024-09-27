@@ -87,7 +87,8 @@ public class GLExample {
 	
 	public void run() {
 		gl = new GL2VK();
-		triangles();
+//		triangles();
+		throttleTest();
 	}
 	
 	
@@ -107,15 +108,16 @@ public class GLExample {
     	int size = vertices.length*Vertex.SIZEOF;
     	ByteBuffer buff = ByteBuffer.allocate(size);
     	
-
     	// Buffer data
     	createVertices(vertices);
     	buff.rewind();
 		memcpy(buff, vertices);
-    	
     	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
     	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
+    	
     	while (!gl.shouldClose()) {
+
+        	
 
     		gl.beginRecord();
     		gl.glDrawArrays(vertexBuffer, 0, vertices.length);
@@ -124,44 +126,61 @@ public class GLExample {
     	gl.close();
 	}
 	
-	
+	private void frameWait() {
+		try {
+			Thread.sleep(16);
+		} catch (InterruptedException e) {
+		}
+	}
 	
 	
 	public void throttleTest() {
+		final int PARTS = 5;
 		vertices = new Vertex[3];
-		int[] vertexBuffer = new int[3];
+		int[] vertexBuffer = new int[PARTS];
     	createVertices(vertices);
     	
     	// Gen buffers
-    	IntBuffer out = IntBuffer.allocate(vertices.length);
-    	gl.glGenBuffers(vertices.length, out);
+    	IntBuffer out = IntBuffer.allocate(PARTS);
+    	gl.glGenBuffers(PARTS, out);
     	vertexBuffer = out.array();
     	
     	int buffindex = 0;
 
     	int size = vertices.length*Vertex.SIZEOF;
     	ByteBuffer buff = ByteBuffer.allocate(size);
-    	while (!gl.shouldClose()) {
-        	// Buffer data
-    		gl.beginRecord();
+    	
+    	for (int i = 0; i < PARTS; i++) {
+	    	// Buffer data
+	    	createVertices(vertices);
+	    	buff.rewind();
+			memcpy(buff, vertices);
+			
+	    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer[i]);
+	    	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
+    	}
+		
+    	boolean multithreaded = true;
 
-        	createVertices(vertices);
-        	buff.rewind();
-    		memcpy(buff, vertices);
+    	while (!gl.shouldClose()) {
     		
-        	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer[buffindex]);
-        	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
+    		gl.beginRecord();
     		
     		// Throttle
-        	for (int i = 0; i < 100000; i++) {
-	    		gl.glDrawArrays(vertexBuffer[buffindex], 0, vertices.length);
+        	for (int i = 0; i < 50000; i++) {
+        		if (multithreaded) gl.selectNode(i%gl.getNodesCount());
+        		else gl.selectNode(0);
+        		
+        		gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer[buffindex]);
+	    		gl.glDrawArrays(0, 0, vertices.length);
         	}
         	
     		buffindex++;
-    		if (buffindex >= vertices.length) buffindex = 0;
+    		if (buffindex >= PARTS) buffindex = 0;
     		
     		
     		gl.endRecord();
+    		frameWait();
     	}
     	gl.close();
 	}

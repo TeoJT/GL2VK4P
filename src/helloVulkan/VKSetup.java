@@ -166,7 +166,6 @@ public class VKSetup {
 
     public VkQueue graphicsQueue;
     public VkQueue presentQueue;
-    public List<Long> swapChainFramebuffers;
 
     public long swapChain;
     public List<Long> swapChainImages;

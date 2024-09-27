@@ -67,6 +67,7 @@ public class VulkanSystem {
     public long graphicsPipeline;
 
     private List<VkCommandBuffer> commandBuffers;
+    public List<Long> swapChainFramebuffers;
 
     private List<Frame> inFlightFrames;
     private Map<Integer, Frame> imagesInFlight;
@@ -78,8 +79,9 @@ public class VulkanSystem {
 
 	private VertexAttribsBinding vertexAttribs = null;
     
-	private ThreadNode[] threadNodes = new ThreadNode[4];
-	private ThreadNode testNode;
+	private int selectedNode = 0;
+	private ThreadNode[] threadNodes = new ThreadNode[10];
+//	private ThreadNode testNode;
     
 
     // ======= METHODS ======= //
@@ -113,8 +115,10 @@ public class VulkanSystem {
     
     public void cleanup() {
     	
-    	testNode.await();
-    	testNode.kill();
+    	for (ThreadNode n : threadNodes) {
+    		n.await();
+    		n.kill();
+    	}
     	
 
         cleanupSwapChain();
@@ -149,7 +153,6 @@ public class VulkanSystem {
     	for (int i = 0; i < threadNodes.length; i++) {
     		threadNodes[i] = new ThreadNode(this);
     	}
-    	testNode = new ThreadNode(this);
     }
     
 
@@ -375,7 +378,7 @@ public class VulkanSystem {
 
     private void createFramebuffers() {
 
-        vkbase.swapChainFramebuffers = new ArrayList<>(vkbase.swapChainImageViews.size());
+        swapChainFramebuffers = new ArrayList<>(vkbase.swapChainImageViews.size());
 
         try(MemoryStack stack = stackPush()) {
 
@@ -400,7 +403,7 @@ public class VulkanSystem {
                     throw new RuntimeException("Failed to create framebuffer");
                 }
 
-                vkbase.swapChainFramebuffers.add(pFramebuffer.get(0));
+                swapChainFramebuffers.add(pFramebuffer.get(0));
             }
         }
     }
@@ -409,7 +412,7 @@ public class VulkanSystem {
 
     private void createCommandBuffers() {
 
-        final int commandBuffersCount = vkbase.swapChainFramebuffers.size();
+        final int commandBuffersCount = swapChainFramebuffers.size();
 
         commandBuffers = new ArrayList<>(commandBuffersCount);
 
@@ -519,9 +522,9 @@ public class VulkanSystem {
     	
     	// Now to the command buffer stuff.
         vkResetCommandBuffer(currentCommandBuffer, 0);
+        final int imageIndex = currentImageIndex.get(0);
         
         try(MemoryStack stack = stackPush()) {
-            final int imageIndex = currentImageIndex.get(0);
             
 	        VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
 	        beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
@@ -540,40 +543,46 @@ public class VulkanSystem {
 	        clearValues.color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
 	        renderPassInfo.pClearValues(clearValues);
 
-
-	        // And then begin our thread nodes (secondary command buffers)
-	        // TODO: other thread nodes
-            testNode.beginRecord(currentFrame);
-
             if(vkBeginCommandBuffer(currentCommandBuffer, beginInfo) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to begin recording command buffer");
             }
 
 
-            renderPassInfo.framebuffer(vkbase.swapChainFramebuffers.get(imageIndex));
+            renderPassInfo.framebuffer(swapChainFramebuffers.get(imageIndex));
 
             vkCmdBeginRenderPass(currentCommandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
             
-            vkCmdBindPipeline(currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+//            vkCmdBindPipeline(currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
         }
 
+        // And then begin our thread nodes (secondary command buffers)
+        // TODO: other thread nodes
+    	for (ThreadNode n : threadNodes) {
+    		n.beginRecord(currentFrame, imageIndex);
+    	}
         
     }
     
     
     public void endRecord() {
     	// Before we can end recording, we need to think about our secondary command buffers
-    	testNode.endRecord();
-    	
-    	testNode.await();
+
+    	for (ThreadNode n : threadNodes) {
+	    	n.endRecord();
+    	}
+    	for (ThreadNode n : threadNodes) {
+    		n.await();
+    	}
     	
     	// TODO: TEST NODE
     	try(MemoryStack stack = stackPush()) {
     		// TODO: avoid garbage collection by making it assign list only once.
 	    	List<VkCommandBuffer> cmdbuffers = new ArrayList<>();
-	    	cmdbuffers.add(testNode.getBuffer());
+
+	    	for (ThreadNode n : threadNodes) {
+	    		cmdbuffers.add(n.getBuffer());
+	    	}
 	    	
-//	    	vkCmdExecuteCommands(currentCommandBuffer, 1, );
 	    	vkCmdExecuteCommands(currentCommandBuffer, Util.asPointerBuffer(stack, cmdbuffers));
     	}
     	
@@ -587,7 +596,7 @@ public class VulkanSystem {
     }
     
     public void drawArrays(long id, int size, int first) {
-    	testNode.drawArrays(id, size, first);
+    	threadNodes[selectedNode].drawArrays(id, size, first);
     }
 
     // NOT thread safe!
@@ -605,6 +614,14 @@ public class VulkanSystem {
 	
 	        vkCmdDraw(cmdbuffer, size, 1, first, 0);
         }
+    }
+    
+    public void selectNode(int node) {
+    	selectedNode = node;
+    }
+    
+    public int getNodesCount() {
+    	return threadNodes.length;
     }
     
     public void submitAndPresent() {
@@ -682,7 +699,7 @@ public class VulkanSystem {
 
     public void cleanupSwapChain() {
 
-        vkbase.swapChainFramebuffers.forEach(framebuffer -> vkDestroyFramebuffer(device, framebuffer, null));
+        swapChainFramebuffers.forEach(framebuffer -> vkDestroyFramebuffer(device, framebuffer, null));
 
         try(MemoryStack stack = stackPush()) {vkFreeCommandBuffers(device, vkbase.commandPool, Util.asPointerBuffer(stack, commandBuffers));}
 

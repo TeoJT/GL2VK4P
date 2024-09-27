@@ -95,4 +95,12 @@ public class GL2VK {
 	public void endRecord() {
 		system.endRecord();
 	}
+	
+	public void selectNode(int node) {
+		system.selectNode(node);
+	}
+	
+	public int getNodesCount() {
+		return system.getNodesCount();
+	}
 }

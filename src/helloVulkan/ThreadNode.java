@@ -34,6 +34,7 @@ import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 //import helloVulkan.VKSetup.QueueFamilyIndices;
 
 public class ThreadNode {
+	public final static int NO_CMD = 0;
 	public final static int CMD_DRAW_ARRAYS = 1;
 	public final static int CMD_DRAW_INDEXED = 2;
 	public final static int CMD_BEGIN_RECORD = 3;
@@ -43,7 +44,7 @@ public class ThreadNode {
 	// To avoid clashing from the main thread accessing the front of the queue while the
 	// other thread is accessing the end of the queue, best solution is to make this big
 	// enough lol.
-	private final static int MAX_QUEUE_LENGTH = 512;
+	private final static int MAX_QUEUE_LENGTH = 50000;
 	
 	private VulkanSystem system;
 	private VKSetup vkbase;
@@ -51,12 +52,15 @@ public class ThreadNode {
 	private VkCommandBuffer[] cmdbuffers;
 	private AtomicBoolean sleeping = new AtomicBoolean(false);
 	private AtomicInteger currentFrame = new AtomicInteger(0);
+	private AtomicInteger currentImage = new AtomicInteger(0);
 	private long commandPool;
 	
 	// Read-only begin info for beginning our recording of commands
 	// (what am i even typing i need sleep)
 	// One for each frames in flight
 	private VkCommandBufferBeginInfo[] beginInfos;
+	// Just to keep it from being garbage collected or something
+	private VkCommandBufferInheritanceInfo[] inheritanceInfos;
 	
 	
 	// There are two seperate indexes, one for our thread (main thread) and one for this thread.
@@ -102,6 +106,14 @@ public class ThreadNode {
 		createObjects();
 		startThread();
 	}
+	
+
+	final static boolean DEBUG = false;
+	private static void println(String message) {
+		if (DEBUG) {
+			System.out.println(message);
+		}
+	}
 
 	private void createObjects() {
 		// Create command pool
@@ -119,7 +131,8 @@ public class ThreadNode {
 	        commandPool = pCommandPool.get(0);
         }
 
-    	final int commandBuffersCount = vkbase.swapChainFramebuffers.size();
+//    	final int commandBuffersCount = system.swapChainFramebuffers.size();
+        final int commandBuffersCount = VulkanSystem.MAX_FRAMES_IN_FLIGHT;
     	
         // Create secondary command buffer
         try(MemoryStack stack = stackPush()) {
@@ -142,20 +155,22 @@ public class ThreadNode {
             }
         }
         
+        int imagesSize = system.swapChainFramebuffers.size();
         // Create readonly beginInfo structs.
-        beginInfos = new VkCommandBufferBeginInfo[commandBuffersCount];
-            for(int i = 0; i < commandBuffersCount; i++) {
+        beginInfos = new VkCommandBufferBeginInfo[imagesSize];
+        inheritanceInfos = new VkCommandBufferInheritanceInfo[imagesSize];
+        for(int i = 0; i < imagesSize; i++) {
 //        	 Inheritance because for some reason we need that
-	        VkCommandBufferInheritanceInfo inheritanceInfo = VkCommandBufferInheritanceInfo.create();
-	        inheritanceInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO);
-			inheritanceInfo.renderPass(system.renderPass);
+	        inheritanceInfos[i] = VkCommandBufferInheritanceInfo.create();
+	        inheritanceInfos[i].sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO);
+			inheritanceInfos[i].renderPass(system.renderPass);
 			// Secondary command buffer also use the currently active framebuffer
-			inheritanceInfo.framebuffer(vkbase.swapChainFramebuffers.get(i));
+			inheritanceInfos[i].framebuffer(system.swapChainFramebuffers.get(i));
 			
 			beginInfos[i] = VkCommandBufferBeginInfo.create();
 			beginInfos[i].sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
 			beginInfos[i].flags(VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT);
-			beginInfos[i].pInheritanceInfo(inheritanceInfo);
+			beginInfos[i].pInheritanceInfo(inheritanceInfos[i]);
         }
 	}
 	
@@ -175,34 +190,38 @@ public class ThreadNode {
 	        		  // TODO: get correct frame thingiemajig.
 	        		  VkCommandBuffer cmdbuffer = cmdbuffers[currentFrame.get()];
 	        		  
-//	        		  System.out.println(cmd.cmdid);
+	        		  println(""+cmd.cmdid);
 	        		  
 	        		  // ======================
 	        		  // CMD EXECUTOR
 	        		  // ======================
 	        		  switch (cmd.cmdid) {
-	        		  case 0:
+	        		  case NO_CMD:
+	        			  sleeping.set(true);
 	        			  goToSleepMode = true;
 	        			  myIndex--;
 	        			  break;
 	        		  case CMD_DRAW_ARRAYS:
-//	        			  System.out.println("CMD_DRAW_ARRAYS");
+	        			  println("CMD_DRAW_ARRAYS");
 	        			  system.drawArraysImpl(cmdbuffer, cmd.bufferid, cmd.size, cmd.first);
 	        			  break;
 	        			  
 	        			  // Probably the most important command
 	        		  case CMD_BEGIN_RECORD:
-//	        			  System.out.println("CMD_BEGIN_RECORD");
+	        			  	println("CMD_BEGIN_RECORD");
 	        		      	vkResetCommandBuffer(cmdbuffer, 0);
 	        		      	// Begin recording
-	
-	        	            if(vkBeginCommandBuffer(cmdbuffer, beginInfos[currentFrame.get()]) != VK_SUCCESS) {
+	        		      	
+	        		      	// In case you're wondering, beginInfo index is currentImage, not
+	        		      	// the currentFrame, because it holds which framebuffer (image) we're
+	        		      	// using (confusing i know)
+	        	            if(vkBeginCommandBuffer(cmdbuffer, beginInfos[currentImage.get()]) != VK_SUCCESS) {
 	        	                throw new RuntimeException("Failed to begin recording command buffer");
 	        	            }
 	        	            vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, system.graphicsPipeline);
 	        	            break;
 	        		  case CMD_END_RECORD:
-//	        			  System.out.println("CMD_END_RECORD");
+	        			  	println("CMD_END_RECORD");
 						    if(vkEndCommandBuffer(cmdbuffer) != VK_SUCCESS) {
 						        throw new RuntimeException("Failed to record command buffer");
 						    }
@@ -215,7 +234,7 @@ public class ThreadNode {
 	        		  // ======================
 	        		  
 	        		  // Reset to zero for safety purposes.
-	        		  cmd.cmdid = 0;
+	        		  cmd.cmdid = NO_CMD;
 	        		  
 	        		  if (kill) {
 	        			  sleeping.set(false);
@@ -225,8 +244,7 @@ public class ThreadNode {
 	        		  
 	        		  // No more tasks to do? Take a lil nap.
 	        		  if (goToSleepMode) {
-//	        			  System.out.println("NOW SLEEPING");
-	        			  sleeping.set(true);
+	        			  println("NOW SLEEPING");
 	        			  try {
 	        				  // Sleep for an indefinite amount of time
 	        				  // (we gonna interrupt the thread later)
@@ -249,6 +267,9 @@ public class ThreadNode {
 	        				  if (count >= MAX_QUEUE_LENGTH) {
 	        					  System.err.println("BUG WARNING signalled out of sleep with no work available.");
 	        				  }
+	        				  else if (count >= 1) {
+	        					  System.err.println("BUG WARNING had to escape our way out of blank queue ("+count+")");
+	        				  }
 	        			  }
 	        		  }
 	        	  }
@@ -261,8 +282,19 @@ public class ThreadNode {
 	
 	
 	private CMD getNextCMD() {
-		return cmdqueue[(cmdindex++)%MAX_QUEUE_LENGTH];
+		CMD ret = cmdqueue[(cmdindex)%MAX_QUEUE_LENGTH];
+		while (ret.cmdid != 0) {
+			// We're forced to wait until the thread has caught up with some of the queue
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+			}
+//			println("WARNING  queue clash, cmdid is "+ret.cmdid);
+		}
+		cmdindex++;
+		return ret;
 	}
+	
 	
 	private void wakeThread() {
 		// Only need to interrupt if sleeping.
@@ -277,7 +309,7 @@ public class ThreadNode {
 
 
     public void drawArrays(long id, int size, int first) {
-//		System.out.println("call draw arrays");
+		println("call draw arrays");
         CMD cmd = getNextCMD();
         cmd.cmdid = CMD_DRAW_ARRAYS;
         cmd.bufferid = id;
@@ -286,9 +318,10 @@ public class ThreadNode {
         wakeThread();
     }
 
-	public void beginRecord(int currentFrame) {
-//		System.out.println("call begin record");
+	public void beginRecord(int currentFrame, int currentImage) {
+		println("call begin record");
 		this.currentFrame.set(currentFrame);
+		this.currentImage.set(currentImage);
         CMD cmd = getNextCMD();
         cmd.cmdid = CMD_BEGIN_RECORD;
         // No arguments
@@ -296,7 +329,7 @@ public class ThreadNode {
 	}
 	
 	public void endRecord() {
-//		System.out.println("call end record");
+		println("call end record");
         CMD cmd = getNextCMD();
         cmd.cmdid = CMD_END_RECORD;
         // No arguments
@@ -304,7 +337,7 @@ public class ThreadNode {
 	}
 
 	public void kill() {
-//		System.out.println("kill thread");
+		println("kill thread");
         CMD cmd = getNextCMD();
         cmd.cmdid = CMD_KILL;
         // No arguments
