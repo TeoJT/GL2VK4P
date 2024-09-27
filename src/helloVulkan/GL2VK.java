@@ -84,6 +84,10 @@ public class GL2VK {
 		return system.shouldClose();
 	}
 	
+	public void close() {
+		system.cleanup();
+	}
+	
 	public void beginRecord() {
 		system.beginRecord();
 	}

@@ -616,7 +616,7 @@ public class VKSetup {
             }
         }
 
-        return queueIndicies.isComplete() && extensionsSupported && swapChainAdequate && integrated;
+        return findQueueFamilies(device).isComplete() && extensionsSupported && swapChainAdequate && integrated;
     }
 
 

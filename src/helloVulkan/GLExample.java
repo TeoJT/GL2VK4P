@@ -47,9 +47,8 @@ public class GLExample {
     	// buffer is bound when vertexAttribPointer is called.
 	}
 
-    final static int NUM_VERTICES = 3;
 
-	private Vertex[] vertices = new Vertex[NUM_VERTICES];
+	private Vertex[] vertices;
 	
 	
 	private void createVertices(Vertex[] buffer) {
@@ -85,10 +84,52 @@ public class GLExample {
         }
     }
 	
-	int[] vertexBuffer = new int[3];
 	
 	public void run() {
 		gl = new GL2VK();
+		triangles();
+	}
+	
+	
+	
+	
+	public void triangles() {
+		vertices = new Vertex[10000];
+    	createVertices(vertices);
+    	
+    	// Gen buffers
+    	IntBuffer out = IntBuffer.allocate(1);
+    	gl.glGenBuffers(1, out);
+    	int vertexBuffer = out.get(0);
+    	
+    	
+
+    	int size = vertices.length*Vertex.SIZEOF;
+    	ByteBuffer buff = ByteBuffer.allocate(size);
+    	
+
+    	// Buffer data
+    	createVertices(vertices);
+    	buff.rewind();
+		memcpy(buff, vertices);
+    	
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
+    	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
+    	while (!gl.shouldClose()) {
+
+    		gl.beginRecord();
+    		gl.glDrawArrays(vertexBuffer, 0, vertices.length);
+    		gl.endRecord();
+    	}
+    	gl.close();
+	}
+	
+	
+	
+	
+	public void throttleTest() {
+		vertices = new Vertex[3];
+		int[] vertexBuffer = new int[3];
     	createVertices(vertices);
     	
     	// Gen buffers
@@ -121,9 +162,8 @@ public class GLExample {
     		
     		
     		gl.endRecord();
-    		
     	}
+    	gl.close();
 	}
-	
 	
 }

@@ -51,7 +51,7 @@ public class VulkanSystem {
 
 
 
-	private static final int MAX_FRAMES_IN_FLIGHT = 2;
+	public static final int MAX_FRAMES_IN_FLIGHT = 2;
 
     
 
@@ -62,9 +62,9 @@ public class VulkanSystem {
 
 
 
-    private long renderPass;
+    public long renderPass;
     private long pipelineLayout;
-    private long graphicsPipeline;
+    public long graphicsPipeline;
 
     private List<VkCommandBuffer> commandBuffers;
 
@@ -77,7 +77,9 @@ public class VulkanSystem {
     public VKSetup vkbase;
 
 	private VertexAttribsBinding vertexAttribs = null;
-    private VkCommandBuffer[][] secondaryCommandBuffers;
+    
+	private ThreadNode[] threadNodes = new ThreadNode[4];
+	private ThreadNode testNode;
     
 
     // ======= METHODS ======= //
@@ -99,7 +101,7 @@ public class VulkanSystem {
         createCommandPool();
         createCommandBuffers();
         createSyncObjects();
-
+        createThreadNodes();
     }
     
     public boolean shouldClose() {
@@ -110,6 +112,10 @@ public class VulkanSystem {
     
     
     public void cleanup() {
+    	
+    	testNode.await();
+    	testNode.kill();
+    	
 
         cleanupSwapChain();
 
@@ -138,6 +144,13 @@ public class VulkanSystem {
         glfwTerminate();
     }
     
+    
+    private void createThreadNodes() {
+    	for (int i = 0; i < threadNodes.length; i++) {
+    		threadNodes[i] = new ThreadNode(this);
+    	}
+    	testNode = new ThreadNode(this);
+    }
     
 
 
@@ -526,25 +539,45 @@ public class VulkanSystem {
 	        VkClearValue.Buffer clearValues = VkClearValue.calloc(1, stack);
 	        clearValues.color().float32(stack.floats(0.0f, 0.0f, 0.0f, 1.0f));
 	        renderPassInfo.pClearValues(clearValues);
-	
+
+
+	        // And then begin our thread nodes (secondary command buffers)
+	        // TODO: other thread nodes
+            testNode.beginRecord(currentFrame);
 
             if(vkBeginCommandBuffer(currentCommandBuffer, beginInfo) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to begin recording command buffer");
             }
 
+
             renderPassInfo.framebuffer(vkbase.swapChainFramebuffers.get(imageIndex));
 
-
-            vkCmdBeginRenderPass(currentCommandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBeginRenderPass(currentCommandBuffer, renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
             
             vkCmdBindPipeline(currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
         }
+
+        
     }
     
     
     public void endRecord() {
+    	// Before we can end recording, we need to think about our secondary command buffers
+    	testNode.endRecord();
+    	
+    	testNode.await();
+    	
+    	// TODO: TEST NODE
+    	try(MemoryStack stack = stackPush()) {
+    		// TODO: avoid garbage collection by making it assign list only once.
+	    	List<VkCommandBuffer> cmdbuffers = new ArrayList<>();
+	    	cmdbuffers.add(testNode.getBuffer());
+	    	
+//	    	vkCmdExecuteCommands(currentCommandBuffer, 1, );
+	    	vkCmdExecuteCommands(currentCommandBuffer, Util.asPointerBuffer(stack, cmdbuffers));
+    	}
+    	
         vkCmdEndRenderPass(currentCommandBuffer);
-
 
         if(vkEndCommandBuffer(currentCommandBuffer) != VK_SUCCESS) {
             throw new RuntimeException("Failed to record command buffer");
@@ -552,15 +585,19 @@ public class VulkanSystem {
         
         submitAndPresent();
     }
+    
+    public void drawArrays(long id, int size, int first) {
+    	testNode.drawArrays(id, size, first);
+    }
 
     // NOT thread safe!
-    public void drawArrays(long id, int size, int first) {
-        drawArrays(currentCommandBuffer, id, size, first);
+    public void drawArraysImpl(long id, int size, int first) {
+    	drawArraysImpl(currentCommandBuffer, id, size, first);
     }
 
     // TODO: take in list of longs
     // This method is thread safe
-    public void drawArrays(VkCommandBuffer cmdbuffer, long id, int size, int first) {
+    public void drawArraysImpl(VkCommandBuffer cmdbuffer, long id, int size, int first) {
         try(MemoryStack stack = stackPush()) {
 	        LongBuffer vertexBuffers = stack.longs(id);
 	        LongBuffer offsets = stack.longs(0);
