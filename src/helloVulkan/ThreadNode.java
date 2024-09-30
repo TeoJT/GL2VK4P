@@ -209,28 +209,26 @@ public class ThreadNode {
 		thread = new Thread(new Runnable() {
 	          public void run() {
 	        	  int myIndex = 0;
-	        	  // Look forever
+	        	  // Loop until receive KILL_THREAD cmd
 	        	  while (true) {
 	        		  boolean goToSleepMode = false;
 	        		  boolean kill = false;
 
 	        		  int index = (myIndex++)%MAX_QUEUE_LENGTH;
-	        		  int id = cmdID.getAndSet(index, 0);
-	        		  println(""+id);
 	        		  
 	        		  VkCommandBuffer cmdbuffer = cmdbuffers[currentFrame.get()];
 	        		  
 	        		  
-	        		  if (threadState.get() == STATE_WAKING) {
-	        			  if (id == NO_CMD) System.err.println(myID+" NO_CMD warning");
-        				  threadState.set(STATE_RUNNING);
-	        		  }
+//	        		  if (threadState.get() == STATE_WAKING) {
+//	        			  if (id == NO_CMD) System.err.println(myID+" NO_CMD warning");
+//        				  threadState.set(STATE_RUNNING);
+//	        		  }
 	        		  
 
 	        		  // ======================
 	        		  // CMD EXECUTOR
 	        		  // ======================
-	        		  switch (id) {
+	        		  switch (cmdID.getAndSet(index, 0)) {
 	        		  case NO_CMD:
 	        			  threadState.set(STATE_ENTERING_SLEEP);
 	        			  goToSleepMode = true;
@@ -302,7 +300,8 @@ public class ThreadNode {
 	        			  try {
 	        				  // Sleep for an indefinite amount of time
 	        				  // (we gonna interrupt the thread later)
-	        				  threadState.lazySet(STATE_SLEEPING);
+	        				  threadState.set(STATE_SLEEPING);
+	        				  println("State "+threadState.get());
 	        				  Thread.sleep(999999);
 	        			  }
 	        			  catch (InterruptedException e) {
@@ -351,6 +350,11 @@ public class ThreadNode {
 			return;
 		}
 		
+		// Here's another bug we need to solve:
+		// - (1) finishing up command (RUNNING)
+		// - (0) set cmdid CMD_END_RECORD
+		// - (0) 
+		
 		// Only need to interrupt if sleeping.
 		// We call it here because if wakeThread is called, then a command was called, and
 		// when a command was called, that means we should definitely not be asleep
@@ -364,18 +368,22 @@ public class ThreadNode {
 				}
 			}
 			println("INTERRUPT");
-			thread.interrupt();
+
 			threadState.set(STATE_SLEEPING_INTERRUPTED);
+			  println("rrupt State "+threadState.get());
+			thread.interrupt();
 		}
 		if (threadState.get() == STATE_SLEEPING) {
 			println("INTERRUPT");
-			thread.interrupt();
+
 			// We need to set status for only one interrupt otherwise we will keep calling
 			// interrupt interrupt interrupt interrupt interrupt interrupt interrupt interrupt 
 			// and it seems to be stored in some sort of queue. That means, when the thread tries
 			// to go back to sleep, it immediately wakes up because those interrupts are still in
 			// the queue. We tell it "it's been interrupted once, don't bother it any further."
 			threadState.set(STATE_SLEEPING_INTERRUPTED);
+			  println("rrupt State "+threadState.get());
+			thread.interrupt();
 		}
 		
 		// We also need to consider the case for when a thread is ABOUT to enter sleep mode.
@@ -405,8 +413,7 @@ public class ThreadNode {
         cmdCurrFrame.set(index, currentFrame);
         cmdCurrImage.set(index, currentImage);
         cmdID.set(index, CMD_BEGIN_RECORD);
-		
-        // No arguments
+        
         wakeThread(index);
 	}
 	

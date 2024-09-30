@@ -121,7 +121,7 @@ public class GLExample {
     	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
     	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
 
-    	boolean multithreaded = false;
+    	boolean multithreaded = true;
     	int threadIndex = 0;
     	
     	while (!gl.shouldClose()) {
@@ -182,7 +182,6 @@ public class GLExample {
     		
     		// Throttle
         	for (int i = 0; i < 10; i++) {
-//        		if (multithreaded) gl.selectNode(i%gl.getNodesCount());
         		if (multithreaded) gl.selectNode((int)(i)%gl.getNodesCount());
         		else gl.selectNode(0);
         		

@@ -1,383 +1,230 @@
-AKEUP
-(1) call CMD_DRAW_ARRAYS (index 94)
-(6) 0
+AW_ARRAYS (index 91)
+(1) call CMD_DRAW_ARRAYS (index 122)
 (1) INTERRUPT
-(0) call CMD_END_RECORD (index 95)
-(5) NOW SLEEPING
-(1) WAKEUP
-(7) 1
-(1) 1
-(1) call CMD_END_RECORD (index 95)
-(6) NOW SLEEPING
-(0) 1
-(2) call CMD_END_RECORD (index 71)
-(2) INTERRUPT
-(3) call CMD_END_RECORD (index 71)
-(3) INTERRUPT
-(1) CMD_DRAW_ARRAYS (index 94)
-(7) CMD_DRAW_ARRAYS (index 70)
-(3) WAKEUP
-(4) call CMD_END_RECORD (index 71)
-(4) INTERRUPT
-(7) 0
-(5) call CMD_END_RECORD (index 71)
-(5) INTERRUPT
-(2) WAKEUP
-(4) WAKEUP
-(4) 4
-(0) CMD_DRAW_ARRAYS (index 94)
-(4) CMD_END_RECORD (index 71)
-(0) 4
-(4) NOW SLEEPING
-(0) CMD_END_RECORD (index 95)
-(5) WAKEUP
-(5) 4
-(5) CMD_END_RECORD (index 71)
-(2) 4
-(2) CMD_END_RECORD (index 71)
-(2) NOW SLEEPING
-(6) call CMD_END_RECORD (index 71)
-(6) INTERRUPT
-(7) call CMD_END_RECORD (index 71)
-(7) NOW SLEEPING
-(6) WAKEUP
-(6) 4
-(6) CMD_END_RECORD (index 71)
-(1) 4
-(1) CMD_END_RECORD (index 95)
-(1) NOW SLEEPING
-(3) 4
-(3) CMD_END_RECORD (index 71)
-(6) NOW SLEEPING
-(5) NOW SLEEPING
+(1) rrupt State 6
+(0) WAKEUP
+(0) call CMD_END_RECORD (index 123)
+(1) call CMD_END_RECORD (index 123)
+(2) call CMD_END_RECORD (index 92)
+(0) CMD_DRAW_ARRAYS (index 122)
+(6) State 1
+(0) CMD_END_RECORD (index 123)
 (0) NOW SLEEPING
-(3) NOW SLEEPING
-(7) INTERRUPT
-(7) WAKEUP
-(7) 4
-(7) CMD_END_RECORD (index 71)
+(0) State 1
+(5) NOW SLEEPING
+(5) State 1
+(1) WAKEUP
+(1) CMD_DRAW_ARRAYS (index 122)
+(2) INTERRUPT
+(2) rrupt State 6
 (7) NOW SLEEPING
+(3) call CMD_END_RECORD (index 92)
+(7) State 1
+(1) CMD_END_RECORD (index 123)
+(2) WAKEUP
+(2) CMD_END_RECORD (index 92)
+(3) INTERRUPT
+(3) rrupt State 6
+(2) NOW SLEEPING
+(2) State 1
+(1) NOW SLEEPING
+(1) State 1
+(3) WAKEUP
+(3) CMD_END_RECORD (index 92)
+(3) NOW SLEEPING
+(3) State 1
+(4) call CMD_END_RECORD (index 92)
+(4) INTERRUPT
+(4) rrupt State 6
+(5) call CMD_END_RECORD (index 92)
+(5) INTERRUPT
+(5) rrupt State 6
+(4) WAKEUP
+(4) CMD_END_RECORD (index 92)
+(6) call CMD_END_RECORD (index 92)
+(6) INTERRUPT
+(4) NOW SLEEPING
+(5) WAKEUP
+(5) CMD_END_RECORD (index 92)
+(4) State 1
+(6) rrupt State 6
+(7) call CMD_END_RECORD (index 92)
+(7) INTERRUPT
+(7) rrupt State 6
+(5) NOW SLEEPING
+(5) State 1
+(7) WAKEUP
+(6) WAKEUP
+(7) CMD_END_RECORD (index 92)
+(6) CMD_END_RECORD (index 92)
+(7) NOW SLEEPING
+(6) NOW SLEEPING
+(6) State 1
+(7) State 1
 (0) call begin record
 (0) INTERRUPT
+(0) rrupt State 6
 (1) call begin record
 (1) INTERRUPT
+(1) rrupt State 6
 (2) call begin record
 (2) INTERRUPT
+(2) rrupt State 6
 (3) call begin record
 (3) INTERRUPT
+(3) rrupt State 6
 (4) call begin record
 (4) INTERRUPT
+(4) rrupt State 6
+(0) WAKEUP
+(1) WAKEUP
+(3) WAKEUP
+(1) CMD_BEGIN_RECORD
+(2) WAKEUP
+(2) CMD_BEGIN_RECORD
+(1) NOW SLEEPING
+(1) State 1
+(2) NOW SLEEPING
+(2) State 1
 (5) call begin record
 (5) INTERRUPT
+(5) rrupt State 6
 (6) call begin record
 (6) INTERRUPT
-(3) WAKEUP
-(2) WAKEUP
-(1) WAKEUP
-(1) 3
+(6) rrupt State 6
 (4) WAKEUP
-(4) 3
-(4) CMD_BEGIN_RECORD
-(3) 3
-(6) WAKEUP
-(7) call begin record
-(7) INTERRUPT
-(0) WAKEUP
-(0) 3
-(0) call CMD_DRAW_ARRAYS (index 97)
-(4) 0
-(7) WAKEUP
-(7) 3
-(6) 3
-(6) CMD_BEGIN_RECORD
-(3) CMD_BEGIN_RECORD
-(6) 0
-(5) WAKEUP
-(3) 0
-(3) NOW SLEEPING
-(5) 3
-(5) CMD_BEGIN_RECORD
-(1) CMD_BEGIN_RECORD
-(2) 3
-(2) CMD_BEGIN_RECORD
-(5) 0
-(2) 0
-(5) NOW SLEEPING
-(6) NOW SLEEPING
-(7) CMD_BEGIN_RECORD
-(4) NOW SLEEPING
-(1) call CMD_DRAW_ARRAYS (index 97)
-(2) call CMD_DRAW_ARRAYS (index 73)
-(0) CMD_BEGIN_RECORD
-(7) 0
-(2) NOW SLEEPING
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 97)
-(1) 0
-(1) NOW SLEEPING
-(0) 0
-(0) NOW SLEEPING
-(7) NOW SLEEPING
-(2) INTERRUPT
-(3) call CMD_DRAW_ARRAYS (index 73)
-(3) INTERRUPT
-(2) WAKEUP
-(4) call CMD_DRAW_ARRAYS (index 73)
-(2) 1
-(4) INTERRUPT
-(3) WAKEUP
-(3) 1
-(4) WAKEUP
-(4) 1
-(2) CMD_DRAW_ARRAYS (index 73)
-(4) CMD_DRAW_ARRAYS (index 73)
-(3) CMD_DRAW_ARRAYS (index 73)
-(4) 0
-(4) NOW SLEEPING
-(5) call CMD_DRAW_ARRAYS (index 73)
-(5) INTERRUPT
-(3) 0
-(6) call CMD_DRAW_ARRAYS (index 73)
-(3) NOW SLEEPING
-(2) 0
-(2) NOW SLEEPING
-(5) WAKEUP
-(5) 1
-(6) INTERRUPT
-(5) CMD_DRAW_ARRAYS (index 73)
-(7) call CMD_DRAW_ARRAYS (index 73)
-(5) 0
-(5) NOW SLEEPING
-(6) WAKEUP
-(6) 1
-(7) INTERRUPT
-(0) call CMD_DRAW_ARRAYS (index 98)
-(0) INTERRUPT
-(6) CMD_DRAW_ARRAYS (index 73)
-(7) WAKEUP
-(7) 1
-(1) call CMD_DRAW_ARRAYS (index 98)
-(6) 0
-(1) INTERRUPT
-(7) CMD_DRAW_ARRAYS (index 73)
-(0) call CMD_END_RECORD (index 99)
-(1) call CMD_END_RECORD (index 99)
-(0) WAKEUP
-(7) 0
-(0) 1
-(7) NOW SLEEPING
-(0) CMD_DRAW_ARRAYS (index 98)
-(2) call CMD_END_RECORD (index 74)
-(2) INTERRUPT
-(0) 4
-(0) CMD_END_RECORD (index 99)
-(6) NOW SLEEPING
-(2) WAKEUP
-(2) 4
-(0) NOW SLEEPING
-(3) call CMD_END_RECORD (index 74)
-(3) INTERRUPT
-(4) call CMD_END_RECORD (index 74)
-(4) INTERRUPT
-(5) call CMD_END_RECORD (index 74)
-(5) INTERRUPT
-(1) WAKEUP
-(4) WAKEUP
-(4) 4
-(5) WAKEUP
-(5) 4
-(3) WAKEUP
-(3) 4
-(3) CMD_END_RECORD (index 74)
-(6) call CMD_END_RECORD (index 74)
-(6) INTERRUPT
-(2) CMD_END_RECORD (index 74)
-(7) call CMD_END_RECORD (index 74)
-(2) NOW SLEEPING
-(6) WAKEUP
-(6) 4
-(3) NOW SLEEPING
-(5) CMD_END_RECORD (index 74)
-(5) NOW SLEEPING
-(4) CMD_END_RECORD (index 74)
-(4) NOW SLEEPING
-(1) 1
-(1) CMD_DRAW_ARRAYS (index 97)
-(6) CMD_END_RECORD (index 74)
-(1) 1
-(6) NOW SLEEPING
-(7) INTERRUPT
-(1) CMD_DRAW_ARRAYS (index 98)
-(7) WAKEUP
-(7) 4
-(7) CMD_END_RECORD (index 74)
-(1) 4
-(1) CMD_END_RECORD (index 99)
-(7) NOW SLEEPING
-(1) NOW SLEEPING
-(0) call begin record
-(0) INTERRUPT
-(1) call begin record
-(1) INTERRUPT
-(2) call begin record
-(2) INTERRUPT
-(3) call begin record
-(3) INTERRUPT
-(4) call begin record
-(4) INTERRUPT
-(5) call begin record
-(5) INTERRUPT
-(0) WAKEUP
-(2) WAKEUP
-(2) 3
-(1) WAKEUP
-(4) WAKEUP
-(4) 3
-(3) WAKEUP
-(3) 3
-(3) CMD_BEGIN_RECORD
-(6) call begin record
-(6) INTERRUPT
 (7) call begin record
 (4) CMD_BEGIN_RECORD
-(1) 3
-(1) CMD_BEGIN_RECORD
-(4) 0
+(7) INTERRUPT
+(7) rrupt State 6
+(3) CMD_BEGIN_RECORD
+(0) call CMD_DRAW_ARRAYS (index 125)
 (4) NOW SLEEPING
-(1) 0
-(1) NOW SLEEPING
-(2) CMD_BEGIN_RECORD
-(5) WAKEUP
-(2) 0
-(2) NOW SLEEPING
-(0) 3
 (0) CMD_BEGIN_RECORD
-(5) 3
-(5) CMD_BEGIN_RECORD
-(0) 0
+(7) WAKEUP
+(3) NOW SLEEPING
+(0) CMD_DRAW_ARRAYS (index 125)
+(3) State 1
 (0) NOW SLEEPING
+(0) State 1
+(4) State 1
+(1) call CMD_DRAW_ARRAYS (index 125)
+(1) INTERRUPT
+(1) rrupt State 6
 (6) WAKEUP
-(6) 3
-(7) INTERRUPT
-(3) 0
 (6) CMD_BEGIN_RECORD
-(3) NOW SLEEPING
-(5) 0
-(7) WAKEUP
+(5) WAKEUP
+(5) CMD_BEGIN_RECORD
+(2) call CMD_DRAW_ARRAYS (index 94)
+(2) INTERRUPT
+(2) rrupt State 6
 (5) NOW SLEEPING
-(7) 3
-(6) 0
+(3) call CMD_DRAW_ARRAYS (index 94)
+(3) INTERRUPT
+(3) rrupt State 6
 (7) CMD_BEGIN_RECORD
-(0) call CMD_DRAW_ARRAYS (index 101)
-(7) 0
-(7) NOW SLEEPING
-(6) NOW SLEEPING
-(0) INTERRUPT
-(1) call CMD_DRAW_ARRAYS (index 101)
-(1) INTERRUPT
-(0) WAKEUP
-(2) call CMD_DRAW_ARRAYS (index 76)
-(2) INTERRUPT
-(3) call CMD_DRAW_ARRAYS (index 76)
-(3) INTERRUPT
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 101)
-(4) call CMD_DRAW_ARRAYS (index 76)
+(4) call CMD_DRAW_ARRAYS (index 94)
 (4) INTERRUPT
+(4) rrupt State 6
 (2) WAKEUP
-(0) 0
-(0) NOW SLEEPING
-(2) 1
+(5) call CMD_DRAW_ARRAYS (index 94)
+(2) CMD_DRAW_ARRAYS (index 94)
+(5) State 1
 (1) WAKEUP
-(2) CMD_DRAW_ARRAYS (index 76)
-(1) 1
 (4) WAKEUP
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 76)
-(2) 0
+(7) NOW SLEEPING
 (2) NOW SLEEPING
-(5) call CMD_DRAW_ARRAYS (index 76)
-(3) WAKEUP
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 76)
-(5) INTERRUPT
-(4) 0
-(4) NOW SLEEPING
-(1) CMD_DRAW_ARRAYS (index 101)
-(5) WAKEUP
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 76)
-(1) 0
-(1) NOW SLEEPING
-(3) 0
-(3) NOW SLEEPING
-(6) call CMD_DRAW_ARRAYS (index 76)
-(6) INTERRUPT
-(5) 0
-(5) NOW SLEEPING
-(6) WAKEUP
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 76)
-(7) call CMD_DRAW_ARRAYS (index 76)
-(6) 0
+(7) State 1
 (6) NOW SLEEPING
+(6) State 1
+(2) State 1
+(4) CMD_DRAW_ARRAYS (index 94)
+(1) CMD_DRAW_ARRAYS (index 125)
+(4) NOW SLEEPING
+(5) INTERRUPT
+(5) rrupt State 6
+(3) WAKEUP
+(6) call CMD_DRAW_ARRAYS (index 94)
+(6) INTERRUPT
+(6) rrupt State 6
+(1) NOW SLEEPING
+(5) WAKEUP
+(4) State 1
+(6) WAKEUP
+(6) CMD_DRAW_ARRAYS (index 94)
+(5) CMD_DRAW_ARRAYS (index 94)
+(6) NOW SLEEPING
+(6) State 1
+(1) State 1
+(7) call CMD_DRAW_ARRAYS (index 94)
 (7) INTERRUPT
-(0) call CMD_DRAW_ARRAYS (index 102)
+(7) rrupt State 6
+(3) CMD_DRAW_ARRAYS (index 94)
+(0) call CMD_DRAW_ARRAYS (index 126)
 (0) INTERRUPT
+(0) rrupt State 6
 (7) WAKEUP
-(7) 1
-(1) call CMD_DRAW_ARRAYS (index 102)
-(0) WAKEUP
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 102)
-(7) CMD_DRAW_ARRAYS (index 76)
-(1) INTERRUPT
-(7) 0
-(0) call CMD_END_RECORD (index 103)
-(0) 0
-(1) WAKEUP
-(1) 1
-(1) CMD_DRAW_ARRAYS (index 102)
-(1) call CMD_END_RECORD (index 103)
-(1) 4
-(1) CMD_END_RECORD (index 103)
-(7) NOW SLEEPING
-(1) NOW SLEEPING
-(2) call CMD_END_RECORD (index 77)
-(2) INTERRUPT
-(0) NOW SLEEPING
-(3) call CMD_END_RECORD (index 77)
-(3) INTERRUPT
-(4) call CMD_END_RECORD (index 77)
-(4) INTERRUPT
-(5) call CMD_END_RECORD (index 77)
-(2) WAKEUP
-(3) WAKEUP
-(4) WAKEUP
-(5) INTERRUPT
-(4) 4
-(4) CMD_END_RECORD (index 77)
-(3) 4
-(3) CMD_END_RECORD (index 77)
-(2) 4
-(2) CMD_END_RECORD (index 77)
+(1) call CMD_DRAW_ARRAYS (index 126)
+(7) CMD_DRAW_ARRAYS (index 94)
 (3) NOW SLEEPING
-(4) NOW SLEEPING
-(5) WAKEUP
-(5) 4
-(5) CMD_END_RECORD (index 77)
-(6) call CMD_END_RECORD (index 77)
-(6) INTERRUPT
-(5) NOW SLEEPING
-(6) WAKEUP
-(6) 4
-(2) NOW SLEEPING
-(6) CMD_END_RECORD (index 77)
-(6) NOW SLEEPING
-(7) call CMD_END_RECORD (index 77)
-(7) INTERRUPT
-(7) WAKEUP
-(7) 4
-(7) CMD_END_RECORD (index 77)
+(3) State 1
 (7) NOW SLEEPING
+(7) State 1
+(5) NOW SLEEPING
+(5) State 1
+(0) WAKEUP
+(0) CMD_DRAW_ARRAYS (index 126)
+(1) INTERRUPT
+(1) rrupt State 6
+(0) call CMD_END_RECORD (index 127)
+(1) call CMD_END_RECORD (index 127)
+(2) call CMD_END_RECORD (index 95)
+(2) INTERRUPT
+(2) rrupt State 6
+(3) call CMD_END_RECORD (index 95)
+(2) WAKEUP
+(1) WAKEUP
+(1) CMD_DRAW_ARRAYS (index 126)
+(2) CMD_END_RECORD (index 95)
+(1) CMD_END_RECORD (index 127)
+(2) NOW SLEEPING
+(2) State 1
+(3) INTERRUPT
+(3) rrupt State 6
+(0) NOW SLEEPING
+(0) State 1
+(4) call CMD_END_RECORD (index 95)
+(3) WAKEUP
+(3) CMD_END_RECORD (index 95)
+(1) NOW SLEEPING
+(1) State 1
+(3) NOW SLEEPING
+(3) State 1
+(4) INTERRUPT
+(4) rrupt State 6
+(5) call CMD_END_RECORD (index 95)
+(5) INTERRUPT
+(5) rrupt State 6
+(6) call CMD_END_RECORD (index 95)
+(6) INTERRUPT
+(6) rrupt State 6
+(4) WAKEUP
+(5) WAKEUP
+(5) CMD_END_RECORD (index 95)
+(5) NOW SLEEPING
+(5) State 1
+(7) call CMD_END_RECORD (index 95)
+(7) INTERRUPT
+(7) rrupt State 6
+(6) WAKEUP
+(6) CMD_END_RECORD (index 95)
+(4) CMD_END_RECORD (index 95)
+(7) WAKEUP
+(7) CMD_END_RECORD (index 95)
+(7) NOW SLEEPING
+(7) State 1
+(6) NOW SLEEPING
+(6) State 1
+(4) NOW SLEEPING
+(4) State 1
 (0) BUG WARNING  looplock'd waiting for a thread that won't respond (state 1)
