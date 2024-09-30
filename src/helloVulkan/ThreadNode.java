@@ -52,6 +52,7 @@ public class ThreadNode {
 	public final static int STATE_KILLED = 4;
 	public final static int STATE_WAKING = 5;
 	public final static int STATE_SLEEPING_INTERRUPTED = 6;
+	public final static int STATE_NEXT_CMD = 7;
 	
 	
 	// CURRENT BUGS:
@@ -228,6 +229,18 @@ public class ThreadNode {
 	        		  // ======================
 	        		  // CMD EXECUTOR
 	        		  // ======================
+	        		  
+
+	        		  // As soon as we're at this point we need to tell the main thread that this is a 
+	        		  // time-sensitive point where we are in the process of getting the next
+	        		  // cmd, and in between that verrrry small timeframe, it could be set to something
+	        		  // different. The next command will most definitely be 0 -> something else, so
+	        		  // our thread may end up reading an outdated version (i.e. 0, or NO_CMD). 
+	        		  // If that happens, our main thread needs to see the state is STATE_NEXT_CMD, and
+	        		  // then call wakeThread which will make sure our thread's got the right value.
+	        		  
+        			  threadState.set(STATE_NEXT_CMD);
+	        		  
 	        		  switch (cmdID.getAndSet(index, 0)) {
 	        		  case NO_CMD:
 	        			  threadState.set(STATE_ENTERING_SLEEP);
@@ -235,12 +248,14 @@ public class ThreadNode {
 	        			  myIndex--;
 	        			  break;
 	        		  case CMD_DRAW_ARRAYS:
+	        			  threadState.set(STATE_RUNNING);
 	        			  println("CMD_DRAW_ARRAYS (index "+index+")");
 	        			  system.drawArraysImpl(cmdbuffer, cmdBufferid.get(index), cmdSize.get(index), cmdFirst.get(index));
 	        			  break;
 	        			  
 	        			  // Probably the most important command
 	        		  case CMD_BEGIN_RECORD:
+	        			  	threadState.set(STATE_RUNNING);
 	        			  	println("CMD_BEGIN_RECORD");
 
         			  		currentImage.set(cmdCurrImage.get(index));
@@ -265,6 +280,7 @@ public class ThreadNode {
 	        	            vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, system.graphicsPipeline);
 	        	            break;
 	        		  case CMD_END_RECORD:
+	        			  	threadState.set(STATE_RUNNING);
 	        			  	println("CMD_END_RECORD (index "+index+")");
 
 	        			  	if (openCmdBuffer.get() == true) {
@@ -281,10 +297,12 @@ public class ThreadNode {
 	        	            
 						    break;
 	        		  case CMD_KILL:
+	        			  threadState.set(STATE_RUNNING);
 	        			  goToSleepMode = false;
 	        			  kill = true;
 	        			  break;
 	        		  }
+	        		  
 	        		  // ======================
 	        		  
 	        		  
@@ -350,16 +368,14 @@ public class ThreadNode {
 			return;
 		}
 		
-		// Here's another bug we need to solve:
-		// - (1) finishing up command (RUNNING)
-		// - (0) set cmdid CMD_END_RECORD
-		// - (0) 
 		
 		// Only need to interrupt if sleeping.
 		// We call it here because if wakeThread is called, then a command was called, and
 		// when a command was called, that means we should definitely not be asleep
 		// (avoids concurrency issues with await()
-		if (threadState.get() == STATE_ENTERING_SLEEP) {
+		// If it's on STATE_NEXT_CMD, it means that it might have an outdated cmdid, which we can fix
+		// by simply interrupting it as soon as it eventually goes into sleep mode
+		if (threadState.get() == STATE_ENTERING_SLEEP || threadState.get() == STATE_NEXT_CMD) {
 			// Uhoh, unlucky. This means we just gotta wait until we're entering sleep state then wake up.
 			while (threadState.get() != STATE_SLEEPING) {
 				try {

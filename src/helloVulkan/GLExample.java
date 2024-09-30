@@ -181,8 +181,8 @@ public class GLExample {
     		gl.beginRecord();
     		
     		// Throttle
-        	for (int i = 0; i < 10; i++) {
-        		if (multithreaded) gl.selectNode((int)(i)%gl.getNodesCount());
+        	for (int i = 0; i < 25000; i++) {
+        		if (multithreaded) gl.selectNode((int)(i/1000)%gl.getNodesCount());
         		else gl.selectNode(0);
         		
         		gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer[buffindex]);
@@ -194,7 +194,7 @@ public class GLExample {
     		
     		
     		gl.endRecord();
-    		frameWait();
+//    		frameWait();
     	}
     	gl.close();
 	}
