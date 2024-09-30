@@ -183,7 +183,7 @@ public class GLExample {
     		gl.beginRecord();
     		
     		// Throttle
-        	for (int i = 0; i < 1000; i++) {
+        	for (int i = 0; i < 10000; i++) {
         		if (multithreaded) gl.selectNode((int)(i/10)%gl.getNodesCount());
         		else gl.selectNode(0);
         		
