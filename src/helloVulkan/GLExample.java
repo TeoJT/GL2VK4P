@@ -86,9 +86,15 @@ public class GLExample {
 	
 	
 	public void run() {
-		gl = new GL2VK();
-//		triangles();
-		throttleTest();
+		try {
+			gl = new GL2VK();
+	//		triangles();
+			throttleTest();
+		}
+		catch (Exception e) {
+			System.err.println(e.getMessage());
+			System.exit(1);
+		}
 	}
 	
 	
@@ -161,14 +167,15 @@ public class GLExample {
     	}
 		
     	boolean multithreaded = true;
-
+  	
     	while (!gl.shouldClose()) {
     		
     		gl.beginRecord();
     		
     		// Throttle
-        	for (int i = 0; i < 50000; i++) {
-        		if (multithreaded) gl.selectNode(i%gl.getNodesCount());
+        	for (int i = 0; i < 100; i++) {
+//        		if (multithreaded) gl.selectNode(i%gl.getNodesCount());
+        		if (multithreaded) gl.selectNode((int)(i/500)%gl.getNodesCount());
         		else gl.selectNode(0);
         		
         		gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer[buffindex]);

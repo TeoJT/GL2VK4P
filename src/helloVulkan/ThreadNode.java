@@ -22,6 +22,7 @@ import java.nio.LongBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.atomic.AtomicLongArray;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -34,6 +35,9 @@ import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 //import helloVulkan.VKSetup.QueueFamilyIndices;
 
 public class ThreadNode {
+	final static boolean DEBUG = true;
+	
+	
 	public final static int NO_CMD = 0;
 	public final static int CMD_DRAW_ARRAYS = 1;
 	public final static int CMD_DRAW_INDEXED = 2;
@@ -44,10 +48,11 @@ public class ThreadNode {
 	// To avoid clashing from the main thread accessing the front of the queue while the
 	// other thread is accessing the end of the queue, best solution is to make this big
 	// enough lol.
-	private final static int MAX_QUEUE_LENGTH = 50000;
+	private final static int MAX_QUEUE_LENGTH = 1000;
 	
 	private VulkanSystem system;
 	private VKSetup vkbase;
+	private int myID = 0;
 	
 	private VkCommandBuffer[] cmdbuffers;
 	private AtomicBoolean sleeping = new AtomicBoolean(false);
@@ -71,8 +76,8 @@ public class ThreadNode {
 	
 	// Accessed by 2 threads so volatile (i was told that volatile avoids outdated caching issues)
 	// (source: the internet, the most truthful place, i think)
-	private volatile CMD[] cmdqueue;
-	
+//	private volatile CMD[] cmdqueue;
+
 	
 	// INNER COMMAND TYPES
 	// Originally was gonna create some classes which extend this class,
@@ -80,27 +85,22 @@ public class ThreadNode {
 	// The other option is to put all arguments from every command into
 	// the one cmd class, which isn't the most readable or memory efficient,
 	// but we care about going FAST.
-	private class CMD {
-		// All
-		public int cmdid = 0;
-		
-		// Vertex
-		public long bufferid = 0;
-		public int size = 0;
-		public int first = 0;
-	}
+	private AtomicIntegerArray cmdID = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
+	private AtomicLongArray cmdBufferid = new AtomicLongArray(MAX_QUEUE_LENGTH);
+	private AtomicIntegerArray cmdSize = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
+	private AtomicIntegerArray cmdFirst = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
 	
 	
 
-	public ThreadNode(VulkanSystem vk) {
+	public ThreadNode(VulkanSystem vk, int id) {
 		// Variables setup
 		system = vk;
 		vkbase = vk.vkbase;
+		myID = id;
 		
 		// Initialise cmdqueue and all its objects
-		cmdqueue = new CMD[MAX_QUEUE_LENGTH];
 		for (int i = 0; i < MAX_QUEUE_LENGTH; i++) {
-			cmdqueue[i] = new CMD();
+			cmdID.set(i, 0);
 		}
 		
 		createObjects();
@@ -108,10 +108,9 @@ public class ThreadNode {
 	}
 	
 
-	final static boolean DEBUG = false;
-	private static void println(String message) {
+	private void println(String message) {
 		if (DEBUG) {
-			System.out.println(message);
+			System.out.println("("+myID+") "+message);
 		}
 	}
 
@@ -185,17 +184,18 @@ public class ThreadNode {
 	        		  boolean goToSleepMode = false;
 	        		  boolean kill = false;
 	        		  // Set it to 0 because why not (prevents hard-to-solve bugs probably)
-	        		  CMD cmd = cmdqueue[(myIndex++)%MAX_QUEUE_LENGTH];
+	        		  int index = (myIndex++)%MAX_QUEUE_LENGTH;
+	        		  int id = cmdID.get(index);
 	        		  
 	        		  // TODO: get correct frame thingiemajig.
 	        		  VkCommandBuffer cmdbuffer = cmdbuffers[currentFrame.get()];
 	        		  
-	        		  println(""+cmd.cmdid);
+	        		  println(""+id);
 	        		  
 	        		  // ======================
 	        		  // CMD EXECUTOR
 	        		  // ======================
-	        		  switch (cmd.cmdid) {
+	        		  switch (id) {
 	        		  case NO_CMD:
 	        			  sleeping.set(true);
 	        			  goToSleepMode = true;
@@ -203,7 +203,7 @@ public class ThreadNode {
 	        			  break;
 	        		  case CMD_DRAW_ARRAYS:
 	        			  println("CMD_DRAW_ARRAYS");
-	        			  system.drawArraysImpl(cmdbuffer, cmd.bufferid, cmd.size, cmd.first);
+	        			  system.drawArraysImpl(cmdbuffer, cmdBufferid.get(index), cmdSize.get(index), cmdFirst.get(index));
 	        			  break;
 	        			  
 	        			  // Probably the most important command
@@ -234,7 +234,7 @@ public class ThreadNode {
 	        		  // ======================
 	        		  
 	        		  // Reset to zero for safety purposes.
-	        		  cmd.cmdid = NO_CMD;
+	        		  cmdID.set(index, NO_CMD);
 	        		  
 	        		  if (kill) {
 	        			  sleeping.set(false);
@@ -248,17 +248,16 @@ public class ThreadNode {
 	        			  try {
 	        				  // Sleep for an indefinite amount of time
 	        				  // (we gonna interrupt the thread later)
-	        				  Thread.sleep(999999);
+	        				  Thread.sleep(9999999);
 	        			  }
 	        			  catch (InterruptedException e) {
 	        				  // When interrupted, this means we continue down the loop.
-	        				  sleeping.set(false);
 	        				  // As a bug-safe safety percaution, loop through our cmd list until we find
 	        				  // a value (even though technically speaking, we should always have a next
 	        				  // item to execute at myIndex, but this is threads so we never know.
 	        				  int count = 0;
 	        				  while (count < MAX_QUEUE_LENGTH) {
-	        					  if (cmdqueue[(myIndex)%MAX_QUEUE_LENGTH].cmdid == 0) {
+	        					  if (cmdID.get((myIndex)%MAX_QUEUE_LENGTH) == NO_CMD) {
 	        						  myIndex++;
 	        					  }
 	        					  else break;
@@ -270,6 +269,7 @@ public class ThreadNode {
 	        				  else if (count >= 1) {
 	        					  System.err.println("BUG WARNING had to escape our way out of blank queue ("+count+")");
 	        				  }
+	        				  sleeping.set(false);
 	        			  }
 	        		  }
 	        	  }
@@ -281,9 +281,9 @@ public class ThreadNode {
 	}
 	
 	
-	private CMD getNextCMD() {
-		CMD ret = cmdqueue[(cmdindex)%MAX_QUEUE_LENGTH];
-		while (ret.cmdid != 0) {
+	private int getNextCMDIndex() {
+		int ret = (cmdindex)%MAX_QUEUE_LENGTH;
+		while (cmdID.get(ret) != NO_CMD) {
 			// We're forced to wait until the thread has caught up with some of the queue
 			try {
 				Thread.sleep(1);
@@ -310,11 +310,11 @@ public class ThreadNode {
 
     public void drawArrays(long id, int size, int first) {
 		println("call draw arrays");
-        CMD cmd = getNextCMD();
-        cmd.cmdid = CMD_DRAW_ARRAYS;
-        cmd.bufferid = id;
-        cmd.size = size;
-        cmd.first = first;
+        int index = getNextCMDIndex();
+        cmdID.set(index, CMD_DRAW_ARRAYS);
+        cmdBufferid.set(index, id);
+        cmdSize.set(index, size);
+        cmdFirst.set(index, first);
         wakeThread();
     }
 
@@ -322,24 +322,24 @@ public class ThreadNode {
 		println("call begin record");
 		this.currentFrame.set(currentFrame);
 		this.currentImage.set(currentImage);
-        CMD cmd = getNextCMD();
-        cmd.cmdid = CMD_BEGIN_RECORD;
+        int index = getNextCMDIndex();
+        cmdID.set(index, CMD_BEGIN_RECORD);
         // No arguments
         wakeThread();
 	}
 	
 	public void endRecord() {
 		println("call end record");
-        CMD cmd = getNextCMD();
-        cmd.cmdid = CMD_END_RECORD;
+        int index = getNextCMDIndex();
+        cmdID.set(index, CMD_END_RECORD);
         // No arguments
         wakeThread();
 	}
 
 	public void kill() {
 		println("kill thread");
-        CMD cmd = getNextCMD();
-        cmd.cmdid = CMD_KILL;
+        int index = getNextCMDIndex();
+        cmdID.set(index, CMD_KILL);
         // No arguments
         wakeThread();
 	}
@@ -355,10 +355,10 @@ public class ThreadNode {
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
 			}
-			count++;
-			if (count > 500) {
-				break;
+			if (count == 500) {
+				System.err.println("BUG WARNING  looplock'd waiting for a thread that won't respond");
 			}
+			count++;
 		}
 	}
 }

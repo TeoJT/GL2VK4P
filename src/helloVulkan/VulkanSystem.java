@@ -80,7 +80,7 @@ public class VulkanSystem {
 	private VertexAttribsBinding vertexAttribs = null;
     
 	private int selectedNode = 0;
-	private ThreadNode[] threadNodes = new ThreadNode[10];
+	private ThreadNode[] threadNodes = new ThreadNode[8];
 //	private ThreadNode testNode;
     
 
@@ -116,7 +116,6 @@ public class VulkanSystem {
     public void cleanup() {
     	
     	for (ThreadNode n : threadNodes) {
-    		n.await();
     		n.kill();
     	}
     	
@@ -151,7 +150,7 @@ public class VulkanSystem {
     
     private void createThreadNodes() {
     	for (int i = 0; i < threadNodes.length; i++) {
-    		threadNodes[i] = new ThreadNode(this);
+    		threadNodes[i] = new ThreadNode(this, i);
     	}
     }
     
