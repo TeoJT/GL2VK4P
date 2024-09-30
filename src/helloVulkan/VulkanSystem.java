@@ -81,7 +81,6 @@ public class VulkanSystem {
     
 	private int selectedNode = 0;
 	private ThreadNode[] threadNodes = new ThreadNode[8];
-//	private ThreadNode testNode;
     
 
     // ======= METHODS ======= //

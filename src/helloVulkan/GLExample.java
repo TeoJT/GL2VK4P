@@ -88,8 +88,8 @@ public class GLExample {
 	public void run() {
 		try {
 			gl = new GL2VK();
-			triangles();
-//			throttleTest();
+//			triangles();
+			throttleTest();
 		}
 		catch (Exception e) {
 			System.err.println(e.getMessage());
@@ -181,7 +181,7 @@ public class GLExample {
     		gl.beginRecord();
     		
     		// Throttle
-        	for (int i = 0; i < 20000; i++) {
+        	for (int i = 0; i < 10; i++) {
 //        		if (multithreaded) gl.selectNode(i%gl.getNodesCount());
         		if (multithreaded) gl.selectNode((int)(i)%gl.getNodesCount());
         		else gl.selectNode(0);
