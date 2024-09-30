@@ -90,11 +90,13 @@ public class GLExample {
 			gl = new GL2VK();
 //			triangles();
 			throttleTest();
+
 		}
 		catch (Exception e) {
 			System.err.println(e.getMessage());
 			System.exit(1);
 		}
+    	gl.close();
 	}
 	
 	
@@ -181,8 +183,8 @@ public class GLExample {
     		gl.beginRecord();
     		
     		// Throttle
-        	for (int i = 0; i < 25000; i++) {
-        		if (multithreaded) gl.selectNode((int)(i/1000)%gl.getNodesCount());
+        	for (int i = 0; i < 1000; i++) {
+        		if (multithreaded) gl.selectNode((int)(i/10)%gl.getNodesCount());
         		else gl.selectNode(0);
         		
         		gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer[buffindex]);

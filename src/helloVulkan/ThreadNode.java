@@ -105,7 +105,7 @@ public class ThreadNode {
 	
 	// Accessed by 2 threads so volatile (i was told that volatile avoids outdated caching issues)
 	// (source: the internet, the most truthful place, i think)
-//	private volatile CMD[] cmdqueue;
+	private volatile CMD[] cmdqueue;
 
 	
 	// INNER COMMAND TYPES
@@ -114,12 +114,18 @@ public class ThreadNode {
 	// The other option is to put all arguments from every command into
 	// the one cmd class, which isn't the most readable or memory efficient,
 	// but we care about going FAST.
-	private AtomicIntegerArray cmdID = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicLongArray cmdBufferid = new AtomicLongArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdSize = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdFirst = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdCurrFrame = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdCurrImage = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
+	private class CMD {
+		// All
+		public volatile int id = 0;
+		
+		// Vertex
+		public volatile long bufferid = 0;
+		public volatile int size = 0;
+		public volatile int first = 0;
+		public volatile int currImage = 0;
+		public volatile int currFrame = 0;
+	}
+	
 	
 	
 
@@ -130,8 +136,9 @@ public class ThreadNode {
 		myID = id;
 		
 		// Initialise cmdqueue and all its objects
+		cmdqueue = new CMD[MAX_QUEUE_LENGTH];
 		for (int i = 0; i < MAX_QUEUE_LENGTH; i++) {
-			cmdID.set(i, 0);
+			cmdqueue[i] = new CMD();
 		}
 		
 		createObjects();
@@ -210,8 +217,14 @@ public class ThreadNode {
 		thread = new Thread(new Runnable() {
 	          public void run() {
 	        	  int myIndex = 0;
+
+        		  long sleepTime = 0L;
+        		  long runTime = 0L;
+	        		
 	        	  // Loop until receive KILL_THREAD cmd
 	        	  while (true) {
+    				  long runbefore = System.nanoTime();
+    				  
 	        		  boolean goToSleepMode = false;
 	        		  boolean kill = false;
 
@@ -240,8 +253,10 @@ public class ThreadNode {
 	        		  // then call wakeThread which will make sure our thread's got the right value.
 	        		  
         			  threadState.set(STATE_NEXT_CMD);
-	        		  
-	        		  switch (cmdID.getAndSet(index, 0)) {
+	        		  int id = cmdqueue[index].id;
+	        		  println(""+id);
+	        		  cmdqueue[index].id = 0;
+	        		  switch (id) {
 	        		  case NO_CMD:
 	        			  threadState.set(STATE_ENTERING_SLEEP);
 	        			  goToSleepMode = true;
@@ -250,16 +265,18 @@ public class ThreadNode {
 	        		  case CMD_DRAW_ARRAYS:
 	        			  threadState.set(STATE_RUNNING);
 	        			  println("CMD_DRAW_ARRAYS (index "+index+")");
-	        			  system.drawArraysImpl(cmdbuffer, cmdBufferid.get(index), cmdSize.get(index), cmdFirst.get(index));
+	        			  system.drawArraysImpl(cmdbuffer, cmdqueue[index].bufferid, cmdqueue[index].size, cmdqueue[index].first);
 	        			  break;
 	        			  
 	        			  // Probably the most important command
 	        		  case CMD_BEGIN_RECORD:
 	        			  	threadState.set(STATE_RUNNING);
+	        			  	sleepTime = 0;
+	        			  	runTime = 0;
 	        			  	println("CMD_BEGIN_RECORD");
 
-        			  		currentImage.set(cmdCurrImage.get(index));
-        			  		currentFrame.set(cmdCurrFrame.get(index));
+        			  		currentImage.set(cmdqueue[index].currImage);
+        			  		currentFrame.set(cmdqueue[index].currFrame);
         			  		cmdbuffer = cmdbuffers[currentFrame.get()];
 	        			  	
 	        			  	if (openCmdBuffer.get() == false) {
@@ -295,6 +312,8 @@ public class ThreadNode {
 	        	            threadState.set(STATE_ENTERING_SLEEP);
 	        	            goToSleepMode = true;
 	        	            
+//	        	            System.out.println("("+myID+") Sleep time "+(sleepTime/1000L)+"us  Run time "+(runTime/1000L)+"us");
+	        	            
 						    break;
 	        		  case CMD_KILL:
 	        			  threadState.set(STATE_RUNNING);
@@ -312,20 +331,24 @@ public class ThreadNode {
 	        			  break;
 	        		  }
 	        		  
+	        		  runTime += System.nanoTime()-runbefore;
 	        		  // No more tasks to do? Take a lil nap.
 	        		  if (goToSleepMode) {
 	        			  println("NOW SLEEPING");
+        				  long before = System.nanoTime();
 	        			  try {
 	        				  // Sleep for an indefinite amount of time
 	        				  // (we gonna interrupt the thread later)
 	        				  threadState.set(STATE_SLEEPING);
 	        				  println("State "+threadState.get());
-	        				  Thread.sleep(999999);
+	        				  Thread.sleep(9999999);
 	        			  }
 	        			  catch (InterruptedException e) {
 	        				  threadState.set(STATE_WAKING);
 	        				  println("WAKEUP");
 	        			  }
+        				  threadState.set(STATE_WAKING);
+        				  sleepTime += System.nanoTime()-before;
 	        		  }
 	        	  }
 	        	  threadState.set(STATE_KILLED);
@@ -339,7 +362,7 @@ public class ThreadNode {
 	
 	private int getNextCMDIndex() {
 		int ret = (cmdindex)%MAX_QUEUE_LENGTH;
-		while (cmdID.get(ret) != NO_CMD) {
+		while (cmdqueue[ret].id != NO_CMD) {
 			// We're forced to wait until the thread has caught up with some of the queue
 			try {
 				Thread.sleep(1);
@@ -350,7 +373,6 @@ public class ThreadNode {
 		cmdindex++;
 		return ret;
 	}
-	
 	
 	private void wakeThread(int cmdindex) {
 		// There's a bug if we just call wakethread after setting cmdIndex.
@@ -364,7 +386,7 @@ public class ThreadNode {
 		// - (1) Woke up, but wait! There isn't any work for me to do!
 		// Solution: Check cmdid is non-zero, because thread sets it to 0 as soon as it executes
 		// the command
-		if (cmdID.get(cmdindex) == NO_CMD) {
+		if (cmdqueue[cmdindex].id == NO_CMD) {
 			return;
 		}
 		
@@ -378,10 +400,10 @@ public class ThreadNode {
 		if (threadState.get() == STATE_ENTERING_SLEEP || threadState.get() == STATE_NEXT_CMD) {
 			// Uhoh, unlucky. This means we just gotta wait until we're entering sleep state then wake up.
 			while (threadState.get() != STATE_SLEEPING) {
-				try {
-					Thread.sleep(0, 1000);
-				} catch (InterruptedException e) {
-				}
+//				try {
+//					Thread.sleep(0, 1);
+//				} catch (InterruptedException e) {
+//				}
 			}
 			println("INTERRUPT");
 
@@ -411,31 +433,36 @@ public class ThreadNode {
 
 
     public void drawArrays(long id, int size, int first) {
+    	long before = System.nanoTime();
         int index = getNextCMDIndex();
 		println("call CMD_DRAW_ARRAYS (index "+index+")");
-        cmdBufferid.set(index, id);
-        cmdSize.set(index, size);
-        cmdFirst.set(index, first);
+		CMD cmd = cmdqueue[index];
+		cmd.bufferid = id;
+		cmd.size = size;
+		cmd.first = first;
+		
         // Remember, last thing we should set is cmdID, set it before and
         // our thread may begin executing drawArrays without all the commands
         // being properly set.
-        cmdID.set(index, CMD_DRAW_ARRAYS);
+        cmd.id = CMD_DRAW_ARRAYS;
         wakeThread(index);
+//        System.out.println(((System.nanoTime()-before)));
     }
 
 	public void beginRecord(int currentFrame, int currentImage) {
 		println("call begin record");
         int index = getNextCMDIndex();
-        cmdCurrFrame.set(index, currentFrame);
-        cmdCurrImage.set(index, currentImage);
-        cmdID.set(index, CMD_BEGIN_RECORD);
+		CMD cmd = cmdqueue[index];
+        cmd.currFrame = currentFrame;
+        cmd.currImage = currentImage;
+        cmd.id = CMD_BEGIN_RECORD;
         
         wakeThread(index);
 	}
 	
 	public void endRecord() {
         int index = getNextCMDIndex();
-        cmdID.set(index, CMD_END_RECORD);
+        cmdqueue[index].id = CMD_END_RECORD;
 		println("call CMD_END_RECORD (index "+index+")");
         // No arguments
         wakeThread(index);
@@ -444,7 +471,7 @@ public class ThreadNode {
 	public void kill() {
 		println("kill thread");
         int index = getNextCMDIndex();
-        cmdID.set(index, CMD_KILL);
+        cmdqueue[index].id = CMD_KILL;
         // No arguments
         wakeThread(index);
 	}
@@ -466,11 +493,14 @@ public class ThreadNode {
 				) {
 			
 			try {
-				Thread.sleep(1);
+				Thread.sleep(0, 10000);
 			} catch (InterruptedException e) {
 			}
 			if (count == 500) {
 				System.err.println("("+this.myID+") BUG WARNING  looplock'd waiting for a thread that won't respond (state "+threadState.get()+")");
+			}
+			if (count == 1000) {
+				System.exit(1);
 			}
 			count++;
 		}
