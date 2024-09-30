@@ -35,7 +35,7 @@ import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 //import helloVulkan.VKSetup.QueueFamilyIndices;
 
 public class ThreadNode {
-	final static boolean DEBUG = true;
+	final static boolean DEBUG = false;
 	
 	
 	public final static int NO_CMD = 0;
@@ -44,21 +44,43 @@ public class ThreadNode {
 	public final static int CMD_BEGIN_RECORD = 3;
 	public final static int CMD_END_RECORD = 4;
 	public final static int CMD_KILL = 5;
+
+	public final static int STATE_INACTIVE = 0;
+	public final static int STATE_SLEEPING = 1;
+	public final static int STATE_RUNNING = 2;
+	public final static int STATE_ENTERING_SLEEP = 3;
+	public final static int STATE_KILLED = 4;
+	public final static int STATE_WAKING = 5;
+	
+	
+	// CURRENT BUGS:
+	// Let's say we're calling endCommands:
+	// - (1) executing cmd
+	// - (0) Set cmd id
+	// - (1) Oh look! A new command to execute.
+	// - (1) Done, let's go to sleep
+	// - (0) wakeThread (we're under the assumption that the thread hasn't done the work yet)
+	// - (1) Woke up, but wait! There isn't any work for me to do!
+	// The solution? Not sure yet.
+	
+	
 	
 	// To avoid clashing from the main thread accessing the front of the queue while the
 	// other thread is accessing the end of the queue, best solution is to make this big
 	// enough lol.
-	private final static int MAX_QUEUE_LENGTH = 1000;
+	private final static int MAX_QUEUE_LENGTH = 50000;
 	
 	private VulkanSystem system;
 	private VKSetup vkbase;
 	private int myID = 0;
 	
 	private VkCommandBuffer[] cmdbuffers;
-	private AtomicBoolean sleeping = new AtomicBoolean(false);
 	private AtomicInteger currentFrame = new AtomicInteger(0);
 	private AtomicInteger currentImage = new AtomicInteger(0);
 	private long commandPool;
+
+	private AtomicInteger threadState = new AtomicInteger(STATE_INACTIVE);
+	private AtomicBoolean openCmdBuffer = new AtomicBoolean(false);
 	
 	// Read-only begin info for beginning our recording of commands
 	// (what am i even typing i need sleep)
@@ -185,46 +207,65 @@ public class ThreadNode {
 	        		  boolean kill = false;
 	        		  // Set it to 0 because why not (prevents hard-to-solve bugs probably)
 	        		  int index = (myIndex++)%MAX_QUEUE_LENGTH;
-	        		  int id = cmdID.get(index);
+	        		  int id = cmdID.getAndSet(index, 0);
 	        		  
 	        		  // TODO: get correct frame thingiemajig.
 	        		  VkCommandBuffer cmdbuffer = cmdbuffers[currentFrame.get()];
 	        		  
-	        		  println(""+id);
+//	        		  println(""+id);
 	        		  
 	        		  // ======================
 	        		  // CMD EXECUTOR
 	        		  // ======================
+	        		  
+	        		  
 	        		  switch (id) {
 	        		  case NO_CMD:
-	        			  sleeping.set(true);
+	        			  threadState.set(STATE_ENTERING_SLEEP);
 	        			  goToSleepMode = true;
 	        			  myIndex--;
 	        			  break;
 	        		  case CMD_DRAW_ARRAYS:
-	        			  println("CMD_DRAW_ARRAYS");
+	        			  println("CMD_DRAW_ARRAYS (index "+index+")");
 	        			  system.drawArraysImpl(cmdbuffer, cmdBufferid.get(index), cmdSize.get(index), cmdFirst.get(index));
 	        			  break;
 	        			  
 	        			  // Probably the most important command
 	        		  case CMD_BEGIN_RECORD:
 	        			  	println("CMD_BEGIN_RECORD");
-	        		      	vkResetCommandBuffer(cmdbuffer, 0);
-	        		      	// Begin recording
-	        		      	
-	        		      	// In case you're wondering, beginInfo index is currentImage, not
-	        		      	// the currentFrame, because it holds which framebuffer (image) we're
-	        		      	// using (confusing i know)
-	        	            if(vkBeginCommandBuffer(cmdbuffer, beginInfos[currentImage.get()]) != VK_SUCCESS) {
-	        	                throw new RuntimeException("Failed to begin recording command buffer");
-	        	            }
+	        			  	
+	        			  	if (openCmdBuffer.get() == false) {
+	        			  		vkResetCommandBuffer(cmdbuffer, 0);
+		        		      	// Begin recording
+		        		      	
+		        		      	// In case you're wondering, beginInfo index is currentImage, not
+		        		      	// the currentFrame, because it holds which framebuffer (image) we're
+		        		      	// using (confusing i know)
+		        	            if(vkBeginCommandBuffer(cmdbuffer, beginInfos[currentImage.get()]) != VK_SUCCESS) {
+		        	                throw new RuntimeException("Failed to begin recording command buffer");
+		        	            }
+	        			  	}
+	        			  	// Bug detected
+	        			  	else System.err.println("("+myID+") Attempt to begin an already open command buffer."); 
+	        			  	
+	        	            openCmdBuffer.set(true);
 	        	            vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, system.graphicsPipeline);
 	        	            break;
 	        		  case CMD_END_RECORD:
-	        			  	println("CMD_END_RECORD");
-						    if(vkEndCommandBuffer(cmdbuffer) != VK_SUCCESS) {
-						        throw new RuntimeException("Failed to record command buffer");
-						    }
+	        			  	println("CMD_END_RECORD (index "+index+")");
+
+	        			  	if (openCmdBuffer.get() == true) {
+							    if(vkEndCommandBuffer(cmdbuffer) != VK_SUCCESS) {
+							        throw new RuntimeException("Failed to record command buffer");
+							    }
+		        	            openCmdBuffer.set(false);
+	        			  	}
+	        			  	else System.err.println("("+myID+") Attempt to close an already closed command buffer."); 
+	        	            
+	        	            // We should also really go into sleep mode now
+	        	            threadState.set(STATE_ENTERING_SLEEP);
+	        	            goToSleepMode = true;
+	        	            
 						    break;
 	        		  case CMD_KILL:
 	        			  goToSleepMode = false;
@@ -233,11 +274,9 @@ public class ThreadNode {
 	        		  }
 	        		  // ======================
 	        		  
-	        		  // Reset to zero for safety purposes.
-	        		  cmdID.set(index, NO_CMD);
 	        		  
 	        		  if (kill) {
-	        			  sleeping.set(false);
+	        			  threadState.set(STATE_KILLED);
 	        			  // Kills the thread
 	        			  break;
 	        		  }
@@ -248,6 +287,7 @@ public class ThreadNode {
 	        			  try {
 	        				  // Sleep for an indefinite amount of time
 	        				  // (we gonna interrupt the thread later)
+	        				  threadState.lazySet(STATE_SLEEPING);
 	        				  Thread.sleep(9999999);
 	        			  }
 	        			  catch (InterruptedException e) {
@@ -255,6 +295,7 @@ public class ThreadNode {
 	        				  // As a bug-safe safety percaution, loop through our cmd list until we find
 	        				  // a value (even though technically speaking, we should always have a next
 	        				  // item to execute at myIndex, but this is threads so we never know.
+	        				  threadState.set(STATE_WAKING);
 	        				  int count = 0;
 	        				  while (count < MAX_QUEUE_LENGTH) {
 	        					  if (cmdID.get((myIndex)%MAX_QUEUE_LENGTH) == NO_CMD) {
@@ -264,15 +305,16 @@ public class ThreadNode {
 	        					  count++;
 	        				  }
 	        				  if (count >= MAX_QUEUE_LENGTH) {
-	        					  System.err.println("BUG WARNING signalled out of sleep with no work available.");
+	        					  System.err.println("("+myID+") BUG WARNING signalled out of sleep with no work available.");
 	        				  }
 	        				  else if (count >= 1) {
-	        					  System.err.println("BUG WARNING had to escape our way out of blank queue ("+count+")");
+	        					  System.err.println("("+myID+") BUG WARNING had to escape our way out of blank queue ("+count+")");
 	        				  }
-	        				  sleeping.set(false);
+	        				  threadState.set(STATE_RUNNING);
 	        			  }
 	        		  }
 	        	  }
+	        	  threadState.set(STATE_KILLED);
 	        	  
 	          }
 		}
@@ -301,16 +343,31 @@ public class ThreadNode {
 		// We call it here because if wakeThread is called, then a command was called, and
 		// when a command was called, that means we should definitely not be asleep
 		// (avoids concurrency issues with await()
-		if (sleeping.get() == true) {
+		if (threadState.get() == STATE_ENTERING_SLEEP) {
+			// Uhoh, unlucky. This means we just gotta wait until we're entering sleep state then wake up.
+			while (threadState.get() != STATE_SLEEPING) {
+				try {
+					Thread.sleep(0, 1000);
+				} catch (InterruptedException e) {
+				}
+			}
 			thread.interrupt();
 		}
-		sleeping.set(false);
+		if (threadState.get() == STATE_SLEEPING) {
+			thread.interrupt();
+		}
+		
+		// We also need to consider the case for when a thread is ABOUT to enter sleep mode.
+		// Cus we can call interrupt() all we want, it's not going to stop the thread from
+		// entering sleep mode.
+		
+//		sleeping.set(false);
 	}
 
 
     public void drawArrays(long id, int size, int first) {
-		println("call draw arrays");
         int index = getNextCMDIndex();
+		println("call CMD_DRAW_ARRAYS (index "+index+")");
         cmdID.set(index, CMD_DRAW_ARRAYS);
         cmdBufferid.set(index, id);
         cmdSize.set(index, size);
@@ -329,8 +386,8 @@ public class ThreadNode {
 	}
 	
 	public void endRecord() {
-		println("call end record");
         int index = getNextCMDIndex();
+		println("call CMD_END_RECORD (index "+index+")");
         cmdID.set(index, CMD_END_RECORD);
         // No arguments
         wakeThread();
@@ -350,13 +407,22 @@ public class ThreadNode {
 	
 	public void await() {
 		int count = 0;
-		while (sleeping.get() == false) {
+		// We wait until it has finished its commands
+		
+		// In order for the thread to be properly done its work it must:
+		// - be in sleep mode
+		// - its cmd buffer must be closed
+		while (
+				!(threadState.get() == STATE_SLEEPING &&
+				openCmdBuffer.get() == false)
+				) {
+			
 			try {
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
 			}
 			if (count == 500) {
-				System.err.println("BUG WARNING  looplock'd waiting for a thread that won't respond");
+				System.err.println("("+this.myID+") BUG WARNING  looplock'd waiting for a thread that won't respond (state "+threadState.get()+")");
 			}
 			count++;
 		}

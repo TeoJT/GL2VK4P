@@ -1,0 +1,55 @@
+RD (index 61)
+(7) NOW SLEEPING
+(5) CMD_END_RECORD (index 61)
+(5) NOW SLEEPING
+(0) call begin record
+(1) call begin record
+(2) call begin record
+(3) call begin record
+(4) call begin record
+(5) call begin record
+(0) CMD_BEGIN_RECORD
+(4) CMD_BEGIN_RECORD
+(0) NOW SLEEPING
+(4) NOW SLEEPING
+(3) CMD_BEGIN_RECORD
+(1) CMD_BEGIN_RECORD
+(5) CMD_BEGIN_RECORD
+(1) NOW SLEEPING
+(2) CMD_BEGIN_RECORD
+(6) call begin record
+(2) NOW SLEEPING
+(5) NOW SLEEPING
+(7) call begin record
+(6) CMD_BEGIN_RECORD
+(3) NOW SLEEPING
+(6) NOW SLEEPING
+(7) CMD_BEGIN_RECORD
+(0) call CMD_DRAW_ARRAYS (index 94)
+(0) call CMD_END_RECORD (index 95)
+(1) call CMD_END_RECORD (index 63)
+(2) call CMD_END_RECORD (index 63)
+(0) CMD_DRAW_ARRAYS (index 94)
+(3) call CMD_END_RECORD (index 63)
+(4) call CMD_END_RECORD (index 63)
+(0) CMD_END_RECORD (index 95)
+(3) CMD_END_RECORD (index 63)
+(4) CMD_END_RECORD (index 63)
+(3) NOW SLEEPING
+(5) call CMD_END_RECORD (index 63)
+(4) NOW SLEEPING
+(6) call CMD_END_RECORD (index 63)
+(0) NOW SLEEPING
+(7) call CMD_END_RECORD (index 63)
+(1) CMD_END_RECORD (index 63)
+(1) NOW SLEEPING
+(7) NOW SLEEPING
+(2) CMD_END_RECORD (index 63)
+(2) NOW SLEEPING
+(5) CMD_END_RECORD (index 63)
+(5) NOW SLEEPING
+(6) CMD_END_RECORD (index 63)
+(6) NOW SLEEPING
+(0) BUG WARNING signalled out of sleep with no work available.
+(0) NOW SLEEPING
+(7) BUG WARNING  looplock'd waiting for a thread that won't respond (state 1)

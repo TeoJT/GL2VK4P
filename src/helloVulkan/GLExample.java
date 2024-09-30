@@ -88,8 +88,8 @@ public class GLExample {
 	public void run() {
 		try {
 			gl = new GL2VK();
-	//		triangles();
-			throttleTest();
+			triangles();
+//			throttleTest();
 		}
 		catch (Exception e) {
 			System.err.println(e.getMessage());
@@ -120,14 +120,22 @@ public class GLExample {
 		memcpy(buff, vertices);
     	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
     	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
+
+    	boolean multithreaded = false;
+    	int threadIndex = 0;
     	
     	while (!gl.shouldClose()) {
 
+    		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
+    		else gl.selectNode(0);
         	
 
     		gl.beginRecord();
     		gl.glDrawArrays(vertexBuffer, 0, vertices.length);
     		gl.endRecord();
+    		System.out.println(threadIndex);
+    		
+    		frameWait();
     	}
     	gl.close();
 	}
@@ -173,9 +181,9 @@ public class GLExample {
     		gl.beginRecord();
     		
     		// Throttle
-        	for (int i = 0; i < 100; i++) {
+        	for (int i = 0; i < 20000; i++) {
 //        		if (multithreaded) gl.selectNode(i%gl.getNodesCount());
-        		if (multithreaded) gl.selectNode((int)(i/500)%gl.getNodesCount());
+        		if (multithreaded) gl.selectNode((int)(i)%gl.getNodesCount());
         		else gl.selectNode(0);
         		
         		gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer[buffindex]);

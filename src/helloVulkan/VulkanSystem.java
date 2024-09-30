@@ -595,6 +595,7 @@ public class VulkanSystem {
     }
     
     public void drawArrays(long id, int size, int first) {
+//    	System.out.println(selectedNode);
     	threadNodes[selectedNode].drawArrays(id, size, first);
     }
 
