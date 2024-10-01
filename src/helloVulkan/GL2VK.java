@@ -20,6 +20,14 @@ public class GL2VK {
 	private GraphicsBuffer[] buffers = new GraphicsBuffer[1024];
 	private GLPrograms[] programs = new GLPrograms[1024];
 	
+	// Buffering with secondary command buffers (in high-performance threadnodes) results
+	// in the validation layers giving an error related to not being allowed to call vkCmdCopyData
+	// while the renderpass is enabled (and disabling it temporarily is not really an option).
+	// But, it still seems to perform as normal. Remember validations guarentees that your application
+	// will run without error on all hardware. So... what if we were to ignore the warnings for the 
+	// sake of performance? That's what dangerMode does.
+	private boolean dangerMode = false;
+	
 	private int bufferIndex = 1;
 	private int boundBuffer = 0;
 	
@@ -70,7 +78,7 @@ public class GL2VK {
 		// Create buffer if not exist or currentSize != size.
 		buffers[boundBuffer].createBufferAuto(size, vkusage);
 		
-		buffers[boundBuffer].bufferData(data, size);
+		buffers[boundBuffer].bufferData(data, size, dangerMode);
 	}
 	
 	public void glDrawArrays(int mode, int first, int count) {
@@ -102,5 +110,9 @@ public class GL2VK {
 	
 	public int getNodesCount() {
 		return system.getNodesCount();
+	}
+	
+	public void setDangerMode(boolean mode) {
+		dangerMode = mode;
 	}
 }

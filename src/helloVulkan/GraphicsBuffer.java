@@ -31,8 +31,8 @@ public class GraphicsBuffer {
     private long stagingBuffer = -1;
     private long stagingBufferMemory = -1;
     
-    VulkanSystem system;
-    VKSetup vkbase;
+    private VulkanSystem system;
+    private VKSetup vkbase;
     
     public GraphicsBuffer(VulkanSystem system) {
     	this.system = system;
@@ -104,7 +104,7 @@ public class GraphicsBuffer {
     
     // Sends data straight to the gpu
     // TODO: version where memory is constantly unmapped
-    public void bufferData(ByteBuffer data, int size) {
+    public void bufferData(ByteBuffer data, int size, boolean nodeMode) {
 
     	try(MemoryStack stack = stackPush()) {
 	    	
@@ -146,10 +146,14 @@ public class GraphicsBuffer {
 	            
 	        vkUnmapMemory(system.device, stagingBufferMemory);
 	        
-	
-	        vkbase.copyBufferAndWait(stagingBuffer, bufferID, size);
 	        
-//	        system.nodeBufferData(stagingBuffer, bufferID, size);
+	        if (nodeMode) {
+		        system.nodeBufferData(stagingBuffer, bufferID, size);
+	        }
+	        else {
+	        	vkbase.copyBufferAndWait(stagingBuffer, bufferID, size);
+	        }
+	        
 	        
 //	        vkDestroyBuffer(system.device, stagingBuffer, null);
 //	        vkFreeMemory(system.device, stagingBufferMemory, null);

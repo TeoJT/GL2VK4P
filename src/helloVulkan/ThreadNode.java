@@ -7,12 +7,15 @@ import static org.lwjgl.vulkan.VK10.VK_PIPELINE_BIND_POINT_GRAPHICS;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+import static org.lwjgl.vulkan.VK10.VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
 import static org.lwjgl.vulkan.VK10.VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 import static org.lwjgl.vulkan.VK10.vkAllocateCommandBuffers;
 import static org.lwjgl.vulkan.VK10.vkBeginCommandBuffer;
+import static org.lwjgl.vulkan.VK10.vkCmdBeginRenderPass;
 import static org.lwjgl.vulkan.VK10.vkCmdBindPipeline;
+import static org.lwjgl.vulkan.VK10.vkCmdEndRenderPass;
 import static org.lwjgl.vulkan.VK10.vkCreateCommandPool;
 import static org.lwjgl.vulkan.VK10.vkEndCommandBuffer;
 import static org.lwjgl.vulkan.VK10.vkResetCommandBuffer;
@@ -313,10 +316,10 @@ public class ThreadNode {
 	        		  case CMD_BUFFER_DATA:
 	        			  threadState.set(STATE_RUNNING);
 	        			  println("CMD_BUFFER_DATA (index "+index+")");
-	        			  println(""+cmdLongArg1.get(index));
-	        			  
-	        			  
+
+//	        			  vkCmdEndRenderPass(system.currentCommandBuffer);
 	        			  system.copyBufferFast(cmdbuffer, cmdLongArg1.get(index), cmdLongArg2.get(index), cmdIntArg1.get(index));
+//	        			  vkCmdBeginRenderPass(system.currentCommandBuffer, system.renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 	        			  break;
 	        		  }
 	        		  
@@ -446,7 +449,6 @@ public class ThreadNode {
     
     public void bufferData(long srcBuffer, long dstBuffer, int size) {
         int index = getNextCMDIndex();
-		println("call CMD_BUFFER_DATA (index "+index+")");
 		cmdLongArg1.set(index, srcBuffer);
         cmdLongArg2.set(index, dstBuffer);
         cmdIntArg1.set(index, size);

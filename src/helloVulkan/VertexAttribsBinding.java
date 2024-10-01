@@ -11,6 +11,63 @@ import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 import static org.lwjgl.vulkan.VK10.*;
 
+
+// ABOUT BINDINGS:
+// Bindings are just like glBindBuffer before calling vertexAttribPointer.
+// Bindings are indexes to those buffers.
+// For example 
+// Binding 0: vertexBuffer[0]
+// Binding 1: vertexBuffer[1]
+// Remember that each of those bindings are tied to the attributes
+// For example, attribute (location=0) can be attached to binding 0
+// Then attribute (location=1) can be attached to binding 1
+// And
+// When you want interleaved, it's like this
+// Attribute (location=0) attached to binding 0
+// Attribute (location=1) attached to binding 0
+// Both attached to binding 0.
+// Of course, if you want separate buffers per attribute, you'll need to
+// assign them different buffers each.
+
+// TODO: isolate loadShaderAttribs from class since we don't want it running
+// for each binding (waste of performance)
+// TODO: bindingSize should only be as big as the number of attribs we assign
+// to the binding.
+// TODO: Allow us to construct our attribs-binding through vertexAttribPointer.
+
+// In our main program, here's what's happening surface level v underneath the hood:
+
+// EXAMPLE 1
+// Surface: 
+// glbindBuffer(PGL.ARRAY_BUFFER, vertexVboId);
+// glvertexAttribPointer(vertLoc, VERT_CMP_COUNT, PGL.FLOAT, false, vertexStride, vertexOffset);
+// glbindBuffer(PGL.ARRAY_BUFFER, colorVboId);
+// glvertexAttribPointer(colorLoc, CLR_CMP_COUNT, PGL.FLOAT, false, colorStride, colorOffset);
+
+// Under the hood:
+// - New buffer bound, create new VertexAttribsBinding object
+// - Set VertexAttribsBinding object's attribs.
+// - New buffer bound, create new VertexAttribsBinding object
+// - Set VertexAttribsBinding object's attribs.
+// - When pipeline gets created, we go through each VertexAttribsBinding object
+//   and join the vertexAttributeDescriptions and combine the vertexbindings of each object
+
+// EXAMPLE 2
+// Surface:
+// glbufferData(PGL.ARRAY_BUFFER, Float.BYTES * attribs.length, attribBuffer, PGL.DYNAMIC_DRAW);
+// glvertexAttribPointer(vertLoc, VERT_CMP_COUNT, PGL.FLOAT, false, stride, vertexOffset);
+// glvertexAttribPointer(colorLoc, CLR_CMP_COUNT, PGL.FLOAT, false, stride, colorOffset);
+
+
+// Under the hood:
+// - New buffer bound, create new VertexAttribsBinding object
+// - Set VertexAttribsBinding object's attribs.
+// - Set VertexAttribsBinding object's attribs.
+// - When pipeline gets created, we go through each VertexAttribsBinding object
+//   and join the vertexAttributeDescriptions and combine the vertexbindings of each object
+
+
+
 public class VertexAttribsBinding {
 	private int myBinding = 0;
 	
