@@ -12,6 +12,7 @@ import static org.lwjgl.vulkan.VK10.vkFreeMemory;
 import static org.lwjgl.vulkan.VK10.vkMapMemory;
 import static org.lwjgl.vulkan.VK10.vkUnmapMemory;
 import static org.lwjgl.vulkan.VK10.VK_NULL_HANDLE;
+import static org.lwjgl.vulkan.VK10.vkCmdCopyBuffer;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -19,6 +20,7 @@ import java.nio.BufferOverflowException;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.vulkan.VkBufferCopy;
 
 public class GraphicsBuffer {
 
@@ -26,6 +28,8 @@ public class GraphicsBuffer {
     public long bufferMemoryID = -1;
     private boolean bufferAssigned = false;
     private int bufferSize = 0;
+    private long stagingBuffer = -1;
+    private long stagingBufferMemory = -1;
     
     VulkanSystem system;
     VKSetup vkbase;
@@ -73,6 +77,18 @@ public class GraphicsBuffer {
             this.bufferAssigned = true;
             this.bufferSize = size;
             
+            // STAGING BUFFER
+	        pBuffer = stack.mallocLong(1);
+	        pBufferMemory = stack.mallocLong(1);
+	        vkbase.createBuffer(size,
+	                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	                pBuffer,
+	                pBufferMemory);
+	
+	        this.stagingBuffer = pBuffer.get(0);
+	        this.stagingBufferMemory = pBufferMemory.get(0);
+            
     	}
     }
     
@@ -80,6 +96,8 @@ public class GraphicsBuffer {
     	if (bufferID != -1 && bufferMemoryID != -1) {
 	        vkDestroyBuffer(system.device, bufferID, null);
 	        vkFreeMemory(system.device, bufferMemoryID, null);
+	        vkDestroyBuffer(system.device, stagingBuffer, null);
+	        vkFreeMemory(system.device, stagingBufferMemory, null);
     	}
     }
     
@@ -90,18 +108,6 @@ public class GraphicsBuffer {
 
     	try(MemoryStack stack = stackPush()) {
 	    	
-	    	// Create temporary transfer buffer.
-	    	// TODO: wonder if it's faster to create a transfer buffer and then not erase it?
-	        LongBuffer pBuffer = stack.mallocLong(1);
-	        LongBuffer pBufferMemory = stack.mallocLong(1);
-	        vkbase.createBuffer(size,
-	                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-	                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-	                pBuffer,
-	                pBufferMemory);
-	
-	        long stagingBuffer = pBuffer.get(0);
-	        long stagingBufferMemory = pBufferMemory.get(0);
 	        
 	        // alloc pointer for our data
 	        PointerBuffer pointer = stack.mallocPointer(1);
@@ -141,10 +147,12 @@ public class GraphicsBuffer {
 	        vkUnmapMemory(system.device, stagingBufferMemory);
 	        
 	
-	        vkbase.copyBuffer(stagingBuffer, bufferID, size);
-	
-	        vkDestroyBuffer(system.device, stagingBuffer, null);
-	        vkFreeMemory(system.device, stagingBufferMemory, null);
+	        vkbase.copyBufferAndWait(stagingBuffer, bufferID, size);
+	        
+//	        system.nodeBufferData(stagingBuffer, bufferID, size);
+	        
+//	        vkDestroyBuffer(system.device, stagingBuffer, null);
+//	        vkFreeMemory(system.device, stagingBufferMemory, null);
     	}
     }
     

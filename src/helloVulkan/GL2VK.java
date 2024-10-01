@@ -75,7 +75,7 @@ public class GL2VK {
 	
 	public void glDrawArrays(int mode, int first, int count) {
 		// TODO: *5 is just a placeholder for a fixed shader.
-		system.drawArrays(buffers[boundBuffer].bufferID, count*5, 0);
+		system.nodeDrawArrays(buffers[boundBuffer].bufferID, count*5, 0);
 	}
 	
 	

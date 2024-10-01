@@ -478,7 +478,7 @@ public class VulkanSystem {
     
     
     
-    private VkCommandBuffer currentCommandBuffer = null;
+    public VkCommandBuffer currentCommandBuffer = null;
     private IntBuffer currentImageIndex = null;
 
     public void beginRecord() {
@@ -593,10 +593,21 @@ public class VulkanSystem {
         submitAndPresent();
     }
     
-    public void drawArrays(long id, int size, int first) {
+    ////////////////
+    // NODE COMMANDS
+    ////////////////
+    public void nodeDrawArrays(long id, int size, int first) {
 //    	System.out.println(selectedNode);
     	threadNodes[selectedNode].drawArrays(id, size, first);
     }
+    
+    public void nodeBufferData(long srcBuffer, long dstBuffer, int size) {
+    	threadNodes[selectedNode].bufferData(srcBuffer, dstBuffer, size);
+    }
+    
+    
+    /////////////////////////////////////////////////
+    /////////////////////////////////////////////////
 
     // NOT thread safe!
     public void drawArraysImpl(long id, int size, int first) {
@@ -621,6 +632,17 @@ public class VulkanSystem {
     
     public int getNodesCount() {
     	return threadNodes.length;
+    }
+    
+
+    public void copyBufferFast(VkCommandBuffer cmdbuffer, long srcBuffer, long dstBuffer, long size) {
+        try(MemoryStack stack = stackPush()) {
+            {
+                VkBufferCopy.Buffer copyRegion = VkBufferCopy.calloc(1, stack);
+                copyRegion.size(size);
+                vkCmdCopyBuffer(cmdbuffer, srcBuffer, dstBuffer, copyRegion);
+            }
+        }
     }
     
     public void submitAndPresent() {

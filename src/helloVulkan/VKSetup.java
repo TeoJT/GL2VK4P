@@ -88,6 +88,7 @@ import static org.lwjgl.vulkan.VK10.vkGetBufferMemoryRequirements;
 import static org.lwjgl.vulkan.VK10.vkAllocateMemory;
 import static org.lwjgl.vulkan.VK10.vkBindBufferMemory;
 import static org.lwjgl.vulkan.VK10.vkAllocateCommandBuffers;
+import static org.lwjgl.vulkan.VK10.vkResetCommandBuffer;
 import static org.lwjgl.vulkan.VK10.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 import static org.lwjgl.vulkan.VK10.VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -365,7 +366,8 @@ public class VKSetup {
 //            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
             
             // Tell Vulkan that the buffers of this pool will be constantly rerecorded
-            poolInfo.flags(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+//            poolInfo.flags(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
             // Create our transfer command pool
             if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
@@ -814,7 +816,8 @@ public class VKSetup {
             VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
             beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
             beginInfo.flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
+            
+            vkResetCommandBuffer(transferCommandBuffer, 0);
             // Transfer command buffer implicitly reset
             vkBeginCommandBuffer(transferCommandBuffer, beginInfo);
             {
@@ -832,9 +835,16 @@ public class VKSetup {
                 throw new RuntimeException("Failed to submit copy command buffer");
             }
 
-            vkQueueWaitIdle(transferQueue);
         }
     }
+    
+    
+    
+    public void copyBufferAndWait(long srcBuffer, long dstBuffer, long size) {
+    	copyBuffer(srcBuffer, dstBuffer, size);
+        vkQueueWaitIdle(transferQueue);
+    }
+    
     
 
     

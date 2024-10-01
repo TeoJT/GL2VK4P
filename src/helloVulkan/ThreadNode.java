@@ -44,6 +44,7 @@ public class ThreadNode {
 	public final static int CMD_BEGIN_RECORD = 3;
 	public final static int CMD_END_RECORD = 4;
 	public final static int CMD_KILL = 5;
+	public final static int CMD_BUFFER_DATA = 6;
 
 	public final static int STATE_INACTIVE = 0;
 	public final static int STATE_SLEEPING = 1;
@@ -115,11 +116,10 @@ public class ThreadNode {
 	// the one cmd class, which isn't the most readable or memory efficient,
 	// but we care about going FAST.
 	private AtomicIntegerArray cmdID = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicLongArray cmdBufferid = new AtomicLongArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdSize = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdFirst = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdCurrFrame = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdCurrImage = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
+	private AtomicLongArray cmdLongArg1 = new AtomicLongArray(MAX_QUEUE_LENGTH);
+	private AtomicLongArray cmdLongArg2 = new AtomicLongArray(MAX_QUEUE_LENGTH);
+	private AtomicIntegerArray cmdIntArg1 = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
+	private AtomicIntegerArray cmdIntArg2 = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
 	
 	
 
@@ -255,7 +255,7 @@ public class ThreadNode {
 	        		  case CMD_DRAW_ARRAYS:
 	        			  threadState.set(STATE_RUNNING);
 	        			  println("CMD_DRAW_ARRAYS (index "+index+")");
-	        			  system.drawArraysImpl(cmdbuffer, cmdBufferid.get(index), cmdSize.get(index), cmdFirst.get(index));
+	        			  system.drawArraysImpl(cmdbuffer, cmdLongArg1.get(index), cmdIntArg1.get(index), cmdIntArg2.get(index));
 	        			  break;
 	        			  
 	        			  // Probably the most important command
@@ -265,8 +265,8 @@ public class ThreadNode {
 	        			  	runTime = 0;
 	        			  	println("CMD_BEGIN_RECORD");
 
-        			  		currentImage.set(cmdCurrImage.get(index));
-        			  		currentFrame.set(cmdCurrFrame.get(index));
+        			  		currentImage.set(cmdIntArg1.get(index));
+        			  		currentFrame.set(cmdIntArg2.get(index));
         			  		cmdbuffer = cmdbuffers[currentFrame.get()];
 	        			  	
 	        			  	if (openCmdBuffer.get() == false) {
@@ -309,6 +309,14 @@ public class ThreadNode {
 	        			  threadState.set(STATE_RUNNING);
 	        			  goToSleepMode = false;
 	        			  kill = true;
+	        			  break;
+	        		  case CMD_BUFFER_DATA:
+	        			  threadState.set(STATE_RUNNING);
+	        			  println("CMD_BUFFER_DATA (index "+index+")");
+	        			  println(""+cmdLongArg1.get(index));
+	        			  
+	        			  
+	        			  system.copyBufferFast(cmdbuffer, cmdLongArg1.get(index), cmdLongArg2.get(index), cmdIntArg1.get(index));
 	        			  break;
 	        		  }
 	        		  
@@ -390,10 +398,10 @@ public class ThreadNode {
 		if (threadState.get() == STATE_ENTERING_SLEEP || threadState.get() == STATE_NEXT_CMD) {
 			// Uhoh, unlucky. This means we just gotta wait until we're entering sleep state then wake up.
 			while (threadState.get() != STATE_SLEEPING) {
-//				try {
-//					Thread.sleep(0, 1000);
-//				} catch (InterruptedException e) {
-//				}
+				try {
+					Thread.sleep(0, 1000);
+				} catch (InterruptedException e) {
+				}
 			}
 			println("INTERRUPT");
 
@@ -425,21 +433,36 @@ public class ThreadNode {
     public void drawArrays(long id, int size, int first) {
         int index = getNextCMDIndex();
 		println("call CMD_DRAW_ARRAYS (index "+index+")");
-        cmdBufferid.set(index, id);
-        cmdSize.set(index, size);
-        cmdFirst.set(index, first);
+		cmdLongArg1.set(index, id);
+        cmdIntArg1.set(index, size);
+        cmdIntArg2.set(index, first);
         // Remember, last thing we should set is cmdID, set it before and
         // our thread may begin executing drawArrays without all the commands
         // being properly set.
         cmdID.set(index, CMD_DRAW_ARRAYS);
         wakeThread(index);
     }
+    
+    
+    public void bufferData(long srcBuffer, long dstBuffer, int size) {
+        int index = getNextCMDIndex();
+		println("call CMD_BUFFER_DATA (index "+index+")");
+		cmdLongArg1.set(index, srcBuffer);
+        cmdLongArg2.set(index, dstBuffer);
+        cmdIntArg1.set(index, size);
+        // Remember, last thing we should set is cmdID, set it before and
+        // our thread may begin executing drawArrays without all the commands
+        // being properly set.
+        cmdID.set(index, CMD_BUFFER_DATA);
+        wakeThread(index);
+    }
 
+    
 	public void beginRecord(int currentFrame, int currentImage) {
 		println("call begin record");
         int index = getNextCMDIndex();
-        cmdCurrFrame.set(index, currentFrame);
-        cmdCurrImage.set(index, currentImage);
+        cmdIntArg1.set(index, currentImage);
+        cmdIntArg2.set(index, currentFrame);
         cmdID.set(index, CMD_BEGIN_RECORD);
         
         wakeThread(index);

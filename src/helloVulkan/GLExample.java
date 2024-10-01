@@ -88,8 +88,8 @@ public class GLExample {
 	public void run() {
 		try {
 			gl = new GL2VK();
-//			triangles();
-			throttleTest();
+			triangles();
+//			throttleTest();
 
 		}
 		catch (Exception e) {
@@ -103,7 +103,7 @@ public class GLExample {
 	
 	
 	public void triangles() {
-		vertices = new Vertex[10000];
+		vertices = new Vertex[10];
     	createVertices(vertices);
     	
     	// Gen buffers
@@ -115,27 +115,30 @@ public class GLExample {
 
     	int size = vertices.length*Vertex.SIZEOF;
     	ByteBuffer buff = ByteBuffer.allocate(size);
-    	
-    	// Buffer data
-    	createVertices(vertices);
-    	buff.rewind();
-		memcpy(buff, vertices);
-    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
-    	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
 
-    	boolean multithreaded = true;
+    	
+
+    	boolean multithreaded = false;
     	int threadIndex = 0;
     	
     	while (!gl.shouldClose()) {
 
     		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
     		else gl.selectNode(0);
-        	
 
     		gl.beginRecord();
+
+        	// Buffer data
+        	createVertices(vertices);
+        	buff.rewind();
+    		memcpy(buff, vertices);
+        	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
+        	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
+
+        	
+
     		gl.glDrawArrays(vertexBuffer, 0, vertices.length);
     		gl.endRecord();
-    		System.out.println(threadIndex);
     		
     		frameWait();
     	}
