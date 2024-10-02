@@ -10,6 +10,22 @@ import static org.lwjgl.vulkan.VK10.VK_COLOR_COMPONENT_B_BIT;
 import static org.lwjgl.vulkan.VK10.VK_COLOR_COMPONENT_G_BIT;
 import static org.lwjgl.vulkan.VK10.VK_COLOR_COMPONENT_R_BIT;
 import static org.lwjgl.vulkan.VK10.VK_CULL_MODE_BACK_BIT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32A32_SFLOAT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32A32_SINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32A32_UINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32_SFLOAT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32_SINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32_UINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32_SFLOAT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32_SINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32_UINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32_SFLOAT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32_SINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32_UINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R8G8B8A8_UINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R8G8B8_UINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R8G8_UINT;
+import static org.lwjgl.vulkan.VK10.VK_FORMAT_R8_UINT;
 import static org.lwjgl.vulkan.VK10.VK_FRONT_FACE_CLOCKWISE;
 import static org.lwjgl.vulkan.VK10.VK_LOGIC_OP_COPY;
 import static org.lwjgl.vulkan.VK10.VK_NULL_HANDLE;
@@ -36,6 +52,7 @@ import static org.lwjgl.vulkan.VK10.vkDestroyShaderModule;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
+import java.util.HashMap;
 
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkGraphicsPipelineCreateInfo;
@@ -54,22 +71,67 @@ import org.lwjgl.vulkan.VkShaderModuleCreateInfo;
 import org.lwjgl.vulkan.VkViewport;
 
 import helloVulkan.ShaderSPIRVUtils.SPIRV;
+import helloVulkan.VertexAttribsBinding.AttribInfo;
 
-public class Pipeline {
+
+// Buffer bindings in opengl look like this
+// buffer 6
+// buffer 7
+// buffer 8
+// Let's say we call
+//  bindBuffer(6)
+//  vertexAttribPointer(...)
+//  bindBuffer(5)
+//  vertexAttribPointer(...)
+//  bindBuffer(8)
+//  vertexAttribPointer(...)
+// The question is, what would vulkan's bindings be?
+// ...
+// Whenever we bind a buffer, we need to add it to a list along
+// with the actual buffer so we can later use it to vkcmdBindVertexArrays()
+// so
+// bindBuffer(6)
+// enableVertexArrays()
+// vertexAttribPointer(...)
+// - vkbuffer[0] = buffer(6)
+// - Create VertexAttribsBinding with binding 0
+// 
+// bindBuffer(5)
+// vertexAttribPointer(...)
+// - vkbuffer[1] = buffer(5)
+// - Create VertexAttribsBinding with binding 1
+//
+// bindBuffer(8)
+// vertexAttribPointer(...)
+// - vkbuffer[2] = buffer(8)
+// - Create VertexAttribsBinding with binding 2
+// 
+// We don't care what our vkbindings are, as long as it's in the correct order
+// as we're passing the lists in when we call vkCmdBindVertexArrays().
+
+public class GL2VKPipeline {
 
 	private VulkanSystem system;
 	private VKSetup vkbase;
 	
 	private SPIRV vertShaderSPIRV = null;
 	private SPIRV fragShaderSPIRV = null;
+
+    private long pipelineLayout;
+    public long graphicsPipeline;
+    
+	private ShaderAttribInfo attribInfo = null;
 	
-	public Pipeline(VulkanSystem system) {
+	private HashMap<Integer, VertexAttribsBinding> gl2vkBinding = new HashMap<Integer, VertexAttribsBinding>();
+	private int boundBinding = 0;
+	private int totalVertexAttribsBindings = 0;
+	
+	
+	
+	public GL2VKPipeline(VulkanSystem system) {
     	this.system = system;
     	this.vkbase = system.vkbase;
 	}
-	
-	
-
 
     private long createShaderModule(ByteBuffer spirvCode) {
 
@@ -92,6 +154,7 @@ public class Pipeline {
     
     
     
+    
 
     private void createGraphicsPipeline() {
 
@@ -103,7 +166,6 @@ public class Pipeline {
         		throw new RuntimeException("Shaders must be compiled before calling createGraphicsPipeline()");
         	}
             
-            vertexAttribs = getVertexAttribPointers("resources/shaders/09_shader_base.vert", 0);
             
             long vertShaderModule = createShaderModule(vertShaderSPIRV.bytecode());
             long fragShaderModule = createShaderModule(fragShaderSPIRV.bytecode());
@@ -130,8 +192,8 @@ public class Pipeline {
 
             VkPipelineVertexInputStateCreateInfo vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc(stack);
             vertexInputInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
-            vertexInputInfo.pVertexBindingDescriptions(vertexAttribs.getBindingDescription(stack));
-            vertexInputInfo.pVertexAttributeDescriptions(vertexAttribs.getAttributeDescriptions(stack));
+            vertexInputInfo.pVertexBindingDescriptions(getBindingDescriptions(stack));
+            vertexInputInfo.pVertexAttributeDescriptions(getAttributeDescriptions(stack));
 
             // ===> ASSEMBLY STAGE <===
 
@@ -214,14 +276,14 @@ public class Pipeline {
             pipelineInfo.pMultisampleState(multisampling);
             pipelineInfo.pColorBlendState(colorBlending);
             pipelineInfo.layout(pipelineLayout);
-            pipelineInfo.renderPass(renderPass);
+            pipelineInfo.renderPass(system.renderPass);
             pipelineInfo.subpass(0);
             pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
             pipelineInfo.basePipelineIndex(-1);
 
             LongBuffer pGraphicsPipeline = stack.mallocLong(1);
 
-            if(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, pipelineInfo, null, pGraphicsPipeline) != VK_SUCCESS) {
+            if(vkCreateGraphicsPipelines(vkbase.device, VK_NULL_HANDLE, pipelineInfo, null, pGraphicsPipeline) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create graphics pipeline");
             }
 
@@ -229,18 +291,41 @@ public class Pipeline {
 
             // ===> RELEASE RESOURCES <===
 
-            vkDestroyShaderModule(device, vertShaderModule, null);
-            vkDestroyShaderModule(device, fragShaderModule, null);
+            vkDestroyShaderModule(vkbase.device, vertShaderModule, null);
+            vkDestroyShaderModule(vkbase.device, fragShaderModule, null);
 
             vertShaderSPIRV.free();
             fragShaderSPIRV.free();
         }
     }
     
+    // Used when glBindBuffer is called, so that we know to create a new binding
+    // for our vertexattribs vulkan pipeline. This should be called in glVertexAttribPointer
+    // function.
+    public void bind(int glIndex) {
+    	boundBinding = glIndex;
+    	// Automatically allocate new binding and increate binding count by one.
+    	if (!gl2vkBinding.containsKey(boundBinding)) {
+        	gl2vkBinding.put(glIndex, new VertexAttribsBinding(totalVertexAttribsBindings++, attribInfo));
+    	}
+    	// It all flowssss. In a very complicated, spaghetti'd way.
+    	// Tell me a better way to do it though.
+    }
+    
+    public void vertexAttribPointer(int location, int size, int offset, int stride) {
+    	// Remember, a gl buffer binding of 0 means no bound buffer,
+    	// and by default in this class, means bind() hasn't been called.
+    	if (boundBinding == 0) {
+    		System.err.println("BUG WARNING  vertexAttribPointer called with no bound buffer.");
+    		return;
+    	}
+    	gl2vkBinding.get(boundBinding).vertexAttribPointer(location, size, offset, stride);
+    }
 
     
     public void compileVertex(String source) {
         vertShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.vert", VERTEX_SHADER);
+        attribInfo = new ShaderAttribInfo(source);
     }
 
     

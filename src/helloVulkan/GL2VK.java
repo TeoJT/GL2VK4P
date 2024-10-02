@@ -12,13 +12,10 @@ public class GL2VK {
 	public static final int GL_VERTEX_BUFFER = 1;
 	public static final int GL_INDEX_BUFFER = 2;
 	
-	private class GLPrograms {
-	}
-	
 	private VulkanSystem system;
 	
 	private GraphicsBuffer[] buffers = new GraphicsBuffer[1024];
-	private GLPrograms[] programs = new GLPrograms[1024];
+	private GL2VKPipeline[] programs = new GL2VKPipeline[1024];
 	
 	// Buffering with secondary command buffers (in high-performance threadnodes) results
 	// in the validation layers giving an error related to not being allowed to call vkCmdCopyData
@@ -30,6 +27,7 @@ public class GL2VK {
 	
 	private int bufferIndex = 1;
 	private int boundBuffer = 0;
+	private int boundProgram = 0;
 	
 	
 	
@@ -84,6 +82,13 @@ public class GL2VK {
 	public void glDrawArrays(int mode, int first, int count) {
 		// TODO: *5 is just a placeholder for a fixed shader.
 		system.nodeDrawArrays(buffers[boundBuffer].bufferID, count*5, 0);
+	}
+	
+	public void glVertexAttribPointer() {
+		programs[boundProgram].bind(boundBuffer);
+		
+		// TODO: Need to convert gl attrib to vulkan attrib
+		programs[boundProgram].vertexAttribPointer();
 	}
 	
 	

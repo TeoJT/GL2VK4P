@@ -63,8 +63,6 @@ public class VulkanSystem {
 
 
     public long renderPass;
-    private long pipelineLayout;
-    public long graphicsPipeline;
 
     private List<VkCommandBuffer> commandBuffers;
     public List<Long> swapChainFramebuffers;

@@ -29,8 +29,6 @@ import static org.lwjgl.vulkan.VK10.*;
 // Of course, if you want separate buffers per attribute, you'll need to
 // assign them different buffers each.
 
-// TODO: isolate loadShaderAttribs from class since we don't want it running
-// for each binding (waste of performance)
 // TODO: bindingSize should only be as big as the number of attribs we assign
 // to the binding.
 // TODO: Allow us to construct our attribs-binding through vertexAttribPointer.
@@ -70,143 +68,65 @@ import static org.lwjgl.vulkan.VK10.*;
 
 public class VertexAttribsBinding {
 	private int myBinding = 0;
+	private int bindingStride = 0;
+	private ShaderAttribInfo attribInfo;
 	
-	// Each attrib has a type, size, and location
-	public class AttribInfo {
-		public int location = 0;
-		public int format = 0;
-		public int size = 0;
-		public int offset = 0;
+	private int stateHash = 0;
+	
+	// use classic arrays instead of ArrayLists because we care about garbage
+	// collection overhead.
+	private int[] usedLocations = new int[512];
+	private int usedLocationsIndex = 0;
+	
+	public VertexAttribsBinding(int binding, ShaderAttribInfo attribInfo) {
+		this.myBinding = binding;
+		this.attribInfo = attribInfo;
+		this.bindingStride = attribInfo.bindingSize;
+	}
+	
+	
+	
+
+	// As ugly as it is to modify values straight from attribInfo, realistically these
+	// values will not be changed to anything different if the program uses vertexAttribPointer 
+	// correctly.
+	// NOTE: Passing the return value from glGetAttribLocation will NOT work because how it works
+	// in gl:
+	// Shader 0:
+	// 1: attrib 0
+	// 2: attrib 1
+	// Shader 1:
+	// 3: attrib 0
+	// 4: attrib 1
+	// 5: attrib 2
+	// Instead you will need to pass the attrib number belonging to the shader, i.e. attrib 1,2,3
+	// OpenGL is truly a tangled mess.
+	public void vertexAttribPointer(int location, int size, int offset, int stride) {
+		attribInfo.locationToAttrib[location].size = size;
+		attribInfo.locationToAttrib[location].offset = offset;
+		bindingStride = stride;
 		
-		public AttribInfo(int l, int f, int s, int off) {
-			location = l;
-			format = f;
-			size = s;
-			offset = off;
-		}
-	}
-	
-	// Stupid redundant info for gl backward compat
-	private int bindingSize = 0;
-	public AttribInfo[] locationToAttrib = new AttribInfo[1024];
-	public HashMap<String, Integer> nameToLocation = new HashMap<String, Integer>();
-	
-	public VertexAttribsBinding(int binding, String vertexShader) {
-		myBinding = binding;
-//		bindings++;
-		loadShaderAttribs(vertexShader);
-	}
-	
-	private void loadShaderAttribs(String vertexShader) {
-		String[] lines = vertexShader.split("\n");
-		bindingSize = 0;
-		int currOffset = 0;
+		// We're using those attribs
+		usedLocations[usedLocationsIndex++] = location;
 		
-		int bracketDepth = 0;
-		for (String s : lines) {
-			bracketDepth += countChars(s, "{");
-			bracketDepth -= countChars(s, "}");
-			
-			// Make sure we're not in any methods (like main)
-			// and search for attribs (keyword "in")
-			if (
-					bracketDepth == 0 &&
-					s.contains(" in ")
-			) {
-				// Get location
-				String[] elements = s.split(" ");
-				String line = s.replaceAll(" ", "");
-				int index = line.indexOf("layout(location=");
-				if (index == -1) continue;
-				index += "layout(location=".length();
-				int endIndex = line.indexOf(")", index);
-				
-				int location = Integer.parseInt(line.substring(index, endIndex));
-//				System.out.println("Location: "+location);
-				
-				// Get type
-				String type = "";
-				String attribName = "";
-				try {
-					for (int i = 0; i < elements.length; i++) {
-						if (elements[i].equals("in")) {
-							type = elements[i+1];
-							attribName = elements[i+2];
-							// Remove ; at the end
-							if (attribName.charAt(attribName.length()-1) == ';') attribName = attribName.substring(0, attribName.length()-1);
-//							System.out.println("type: "+type+"  attribName: "+attribName);
-							break;
-						}
-					}
-				}
-				catch (IndexOutOfBoundsException e) {
-//					System.err.println("Woops");
-				}
-				
-				int size = typeToSize(type);
-				int format = typeToFormat(type);
-				
-				locationToAttrib[location] =  
-					new AttribInfo(location, format, size, currOffset);
-				
-				bindingSize += size;
-				currOffset += size;
-				
-				nameToLocation.put(attribName, location);
-			}
-		}
+		// What's set by this function determines the state of the pipeline (if
+		// it changes at any point, we need to recreate the pipeline with new
+		// vertex bindings)
+		stateHash += (location+1L)*usedLocationsIndex*100L + size*2 + offset*3;
 	}
 	
-	private int countChars(String line, String c) {
-		return line.length() - line.replace(c, "").length();
+	public int getHashState() {
+		return stateHash;
 	}
 	
-	private int typeToFormat(String val) {
-		if (val.equals("float")) return VK_FORMAT_R32_SFLOAT;
-		else if (val.equals("vec2")) return VK_FORMAT_R32G32_SFLOAT;
-		else if (val.equals("vec3")) return VK_FORMAT_R32G32B32_SFLOAT;
-		else if (val.equals("vec4")) return VK_FORMAT_R32G32B32A32_SFLOAT;
-		else if (val.equals("int")) return VK_FORMAT_R32_SINT;
-		else if (val.equals("ivec2")) return VK_FORMAT_R32G32_SINT;
-		else if (val.equals("ivec3")) return VK_FORMAT_R32G32B32_SINT;
-		else if (val.equals("ivec4")) return VK_FORMAT_R32G32B32A32_SINT;
-		else if (val.equals("uint")) return VK_FORMAT_R32_UINT;
-		else if (val.equals("uvec2")) return VK_FORMAT_R32G32_UINT;
-		else if (val.equals("uvec3")) return VK_FORMAT_R32G32B32_UINT;
-		else if (val.equals("uvec4")) return VK_FORMAT_R32G32B32A32_UINT;
-		else if (val.equals("bool")) return VK_FORMAT_R8_UINT;
-		else if (val.equals("bvec2")) return VK_FORMAT_R8G8_UINT;
-		else if (val.equals("bvec3")) return VK_FORMAT_R8G8B8_UINT;
-		else if (val.equals("bvec4")) return VK_FORMAT_R8G8B8A8_UINT;
-		else if (val.equals("mat2")) return VK_FORMAT_R32G32_SFLOAT;
-		else if (val.equals("mat3")) return VK_FORMAT_R32G32B32_SFLOAT;
-		else if (val.equals("mat4")) return VK_FORMAT_R32G32B32A32_SFLOAT;
-		else return -1;
+	// Because vertexAttribPointer is called every frame, we need to reset, just simply means
+	// that we re-record the statehash
+	public void reset() {
+		usedLocationsIndex = 0;
+		stateHash = 0;
 	}
 	
-	private int typeToSize(String val) {
-		if (val.equals("float")) return 1 * Float.BYTES;
-		else if (val.equals("vec2")) return 2 * Float.BYTES;
-		else if (val.equals("vec3")) return 3 * Float.BYTES;
-		else if (val.equals("vec4")) return 4 * Float.BYTES;
-		else if (val.equals("int")) return 1 * Integer.BYTES;
-		else if (val.equals("ivec2")) return 2 * Integer.BYTES;
-		else if (val.equals("ivec3")) return 3 * Integer.BYTES;
-		else if (val.equals("ivec4")) return 4 * Integer.BYTES;
-		else if (val.equals("uint")) return 1 * Integer.BYTES;
-		else if (val.equals("uvec2")) return 2 * Integer.BYTES;
-		else if (val.equals("uvec3")) return 3 * Integer.BYTES;
-		else if (val.equals("uvec4")) return 4 * Integer.BYTES;
-		else if (val.equals("bool")) return 1;
-		else if (val.equals("bvec2")) return 2;
-		else if (val.equals("bvec3")) return 3;
-		else if (val.equals("bvec4")) return 4;
-		else if (val.equals("mat2")) return 2 * 2 * Float.BYTES;
-		else if (val.equals("mat3")) return 3 * 3 * Float.BYTES;
-		else if (val.equals("mat4")) return 4 * 4 * Float.BYTES;
-		else return -1;
-	}
-	
+
 	
 	// The actual vulkan stuff
 	public VkVertexInputBindingDescription.Buffer getBindingDescription(MemoryStack stack) {
@@ -214,41 +134,22 @@ public class VertexAttribsBinding {
 		VkVertexInputBindingDescription.calloc(1, stack);
 		
 		bindingDescription.binding(myBinding);
-		bindingDescription.stride(bindingSize);
+		bindingDescription.stride(bindingStride);
 		bindingDescription.inputRate(VK_VERTEX_INPUT_RATE_VERTEX);
 		return bindingDescription;
 	}
 	
-	// For use of opengl layers
-//	public int getAttribLocation(String name) {
-//		if (nameToLocation.containsKey(name)) return nameToLocation.get(name);
-//		else {
-//			System.err.println("getAttribLocation: no attrib "+name);
-//			return -1;
-//		}
-//	}
-	
-	public void vertexAttribPointer(int index, int size, int type, boolean normalized, int stride, int offset) {
-		locationToAttrib[index].size = size;
-//		locationToAttrib[index].format = type;
-		locationToAttrib[index].offset = offset;
-	}
-	
-	public int getSize() {
-		return bindingSize;
-	}
-	
 	public VkVertexInputAttributeDescription.Buffer getAttributeDescriptions(MemoryStack stack) {
 		VkVertexInputAttributeDescription.Buffer attributeDescriptions =
-		VkVertexInputAttributeDescription.calloc(nameToLocation.size());
+		VkVertexInputAttributeDescription.calloc(attribInfo.nameToLocation.size());
 		
 		int i = 0;
-		for (Integer loc : nameToLocation.values()) {
+		for (Integer loc : attribInfo.nameToLocation.values()) {
 			VkVertexInputAttributeDescription description = attributeDescriptions.get(i++);
 			description.binding(myBinding);
 			description.location(loc);
-			description.format(locationToAttrib[loc].format);
-			description.offset(locationToAttrib[loc].offset);
+			description.format(attribInfo.locationToAttrib[loc].format);
+			description.offset(attribInfo.locationToAttrib[loc].offset);
 		}
 		
 		return attributeDescriptions.rewind();
