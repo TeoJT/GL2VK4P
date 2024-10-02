@@ -88,7 +88,7 @@ public class GL2VK {
 		programs[boundProgram].bind(boundBuffer);
 		
 		// TODO: Need to convert gl attrib to vulkan attrib
-		programs[boundProgram].vertexAttribPointer();
+//		programs[boundProgram].vertexAttribPointer();
 	}
 	
 	

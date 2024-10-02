@@ -23,19 +23,19 @@ public class ShaderSPIRVUtils {
         return compileShaderAbsoluteFile(path+shaderFile, shaderKind);
     }
     
-    public static VertexAttribsBinding getVertexAttribPointers(String vertexShader, int binding) {
-    	File f = new File(".");
-    	String path = f.getAbsolutePath().replaceAll("\\\\", "/");
-    	path = path.substring(0, path.length()-1);
-    	System.out.println(path+vertexShader);
-    	try {
-            String source = new String(Files.readAllBytes(Paths.get(vertexShader)));
-            return new VertexAttribsBinding(binding, source);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    	return null;
-    }
+//    public static VertexAttribsBinding getVertexAttribPointers(String vertexShader, int binding) {
+//    	File f = new File(".");
+//    	String path = f.getAbsolutePath().replaceAll("\\\\", "/");
+//    	path = path.substring(0, path.length()-1);
+//    	System.out.println(path+vertexShader);
+//    	try {
+//            String source = new String(Files.readAllBytes(Paths.get(vertexShader)));
+//            return new VertexAttribsBinding(binding, source);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    	return null;
+//    }
 
     public static SPIRV compileShaderAbsoluteFile(String shaderFile, ShaderKind shaderKind) {
         try {

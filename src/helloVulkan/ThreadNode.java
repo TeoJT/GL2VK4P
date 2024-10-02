@@ -287,7 +287,7 @@ public class ThreadNode {
 	        			  	else System.err.println("("+myID+") Attempt to begin an already open command buffer."); 
 	        			  	
 	        	            openCmdBuffer.set(true);
-	        	            vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, system.graphicsPipeline);
+//	        	            vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, system.graphicsPipeline);
 	        	            break;
 	        		  case CMD_END_RECORD:
 	        			  	threadState.set(STATE_RUNNING);

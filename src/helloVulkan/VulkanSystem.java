@@ -1,38 +1,18 @@
 package helloVulkan;
 
-import helloVulkan.ShaderSPIRVUtils.SPIRV;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.Pointer;
 import org.lwjgl.vulkan.*;
 
-import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toSet;
-import static helloVulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
-import static helloVulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
-import static helloVulkan.ShaderSPIRVUtils.compileShaderFile;
-import static helloVulkan.ShaderSPIRVUtils.getVertexAttribPointers;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
-import static org.lwjgl.glfw.GLFWVulkan.glfwGetRequiredInstanceExtensions;
-import static org.lwjgl.system.Configuration.DEBUG;
-import static org.lwjgl.system.MemoryStack.stackGet;
 import static org.lwjgl.system.MemoryStack.stackPush;
-import static org.lwjgl.system.MemoryUtil.NULL;
-import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
-import org.joml.Vector3fc;
-import org.joml.Vector3f;
-import org.joml.Vector2fc;
-import org.joml.Vector2f;
 
 
 
@@ -93,7 +73,7 @@ public class VulkanSystem {
     	device = vkbase.device;
     	
         createRenderPass();
-        createGraphicsPipeline();
+//        createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
         createCommandBuffers();
@@ -203,29 +183,29 @@ public class VulkanSystem {
         vkbase.createSwapChain();
         vkbase.createImageViews();
         createRenderPass();
-        createGraphicsPipeline();
+//        createGraphicsPipeline();
         createFramebuffers();
         createCommandBuffers();
     }
 
     public void recreateSwapChain() {
-
-        try(MemoryStack stack = stackPush()) {
-
-            IntBuffer width = stack.ints(0);
-            IntBuffer height = stack.ints(0);
-
-            while(width.get(0) == 0 && height.get(0) == 0) {
-                glfwGetFramebufferSize(vkbase.window, width, height);
-                glfwWaitEvents();
-            }
-        }
-
-        vkDeviceWaitIdle(device);
-
-        cleanupSwapChain();
-
-        createSwapChainObjects();
+    	System.err.println("BUG WARNING  recreateSwapChain is temporarily disabled.");
+//        try(MemoryStack stack = stackPush()) {
+//
+//            IntBuffer width = stack.ints(0);
+//            IntBuffer height = stack.ints(0);
+//
+//            while(width.get(0) == 0 && height.get(0) == 0) {
+//                glfwGetFramebufferSize(vkbase.window, width, height);
+//                glfwWaitEvents();
+//            }
+//        }
+//
+//        vkDeviceWaitIdle(device);
+//
+//        cleanupSwapChain();
+//
+//        createSwapChainObjects();
     }
 
     private void createFramebuffers() {
@@ -560,9 +540,6 @@ public class VulkanSystem {
 
         try(MemoryStack stack = stackPush()) {vkFreeCommandBuffers(device, vkbase.commandPool, Util.asPointerBuffer(stack, commandBuffers));}
 
-        vkDestroyPipeline(device, graphicsPipeline, null);
-
-        vkDestroyPipelineLayout(device, pipelineLayout, null);
 
         vkDestroyRenderPass(device, renderPass, null);
 

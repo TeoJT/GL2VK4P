@@ -29,9 +29,6 @@ import static org.lwjgl.vulkan.VK10.*;
 // Of course, if you want separate buffers per attribute, you'll need to
 // assign them different buffers each.
 
-// TODO: bindingSize should only be as big as the number of attribs we assign
-// to the binding.
-// TODO: Allow us to construct our attribs-binding through vertexAttribPointer.
 
 // In our main program, here's what's happening surface level v underneath the hood:
 
@@ -115,6 +112,19 @@ public class VertexAttribsBinding {
 		stateHash += (location+1L)*usedLocationsIndex*100L + size*2 + offset*3;
 	}
 	
+	// Mostly used for testing purposes
+	public void vertexAttribPointer(int location) {
+		// We're using those attribs
+		usedLocations[usedLocationsIndex++] = location;
+		
+		// What's set by this function determines the state of the pipeline (if
+		// it changes at any point, we need to recreate the pipeline with new
+		// vertex bindings)
+		stateHash += (location+1L)*usedLocationsIndex*100L + 
+				attribInfo.locationToAttrib[location].size*2 + 
+				attribInfo.locationToAttrib[location].offset*3;
+	}
+	
 	public int getHashState() {
 		return stateHash;
 	}
@@ -128,31 +138,26 @@ public class VertexAttribsBinding {
 	
 
 	
-	// The actual vulkan stuff
-	public VkVertexInputBindingDescription.Buffer getBindingDescription(MemoryStack stack) {
-		VkVertexInputBindingDescription.Buffer bindingDescription =
-		VkVertexInputBindingDescription.calloc(1, stack);
-		
-		bindingDescription.binding(myBinding);
-		bindingDescription.stride(bindingStride);
-		bindingDescription.inputRate(VK_VERTEX_INPUT_RATE_VERTEX);
-		return bindingDescription;
-	}
-	
-	public VkVertexInputAttributeDescription.Buffer getAttributeDescriptions(MemoryStack stack) {
-		VkVertexInputAttributeDescription.Buffer attributeDescriptions =
-		VkVertexInputAttributeDescription.calloc(attribInfo.nameToLocation.size());
-		
-		int i = 0;
-		for (Integer loc : attribInfo.nameToLocation.values()) {
-			VkVertexInputAttributeDescription description = attributeDescriptions.get(i++);
+	public void updateAttributeDescriptions(VkVertexInputAttributeDescription.Buffer attribDescrptions, int index) {
+		for (int i = 0; i < usedLocationsIndex; i++) {
+			int loc = usedLocations[i];
+			
+			VkVertexInputAttributeDescription description = attribDescrptions.get(index++);
 			description.binding(myBinding);
 			description.location(loc);
 			description.format(attribInfo.locationToAttrib[loc].format);
 			description.offset(attribInfo.locationToAttrib[loc].offset);
 		}
-		
-		return attributeDescriptions.rewind();
+	}
+	
+	public int getSize() {
+		return usedLocationsIndex;
+	}
+	
+	public void updateBindingDescription(VkVertexInputBindingDescription bindingDescription) {
+		bindingDescription.binding(myBinding);
+		bindingDescription.stride(bindingStride);
+		bindingDescription.inputRate(VK_VERTEX_INPUT_RATE_VERTEX);
 	}
 	
 }

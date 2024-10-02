@@ -1,7 +1,6 @@
 package helloVulkan;
 
 import static helloVulkan.ShaderSPIRVUtils.compileShaderFile;
-import static helloVulkan.ShaderSPIRVUtils.getVertexAttribPointers;
 import static helloVulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
 import static helloVulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static org.lwjgl.system.MemoryStack.stackPush;
@@ -10,22 +9,6 @@ import static org.lwjgl.vulkan.VK10.VK_COLOR_COMPONENT_B_BIT;
 import static org.lwjgl.vulkan.VK10.VK_COLOR_COMPONENT_G_BIT;
 import static org.lwjgl.vulkan.VK10.VK_COLOR_COMPONENT_R_BIT;
 import static org.lwjgl.vulkan.VK10.VK_CULL_MODE_BACK_BIT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32A32_SFLOAT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32A32_SINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32A32_UINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32_SFLOAT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32_SINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32_UINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32_SFLOAT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32_SINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32_UINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32_SFLOAT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32_SINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32_UINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R8G8B8A8_UINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R8G8B8_UINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R8G8_UINT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R8_UINT;
 import static org.lwjgl.vulkan.VK10.VK_FRONT_FACE_CLOCKWISE;
 import static org.lwjgl.vulkan.VK10.VK_LOGIC_OP_COPY;
 import static org.lwjgl.vulkan.VK10.VK_NULL_HANDLE;
@@ -48,6 +31,8 @@ import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
 import static org.lwjgl.vulkan.VK10.vkCreateGraphicsPipelines;
 import static org.lwjgl.vulkan.VK10.vkCreatePipelineLayout;
 import static org.lwjgl.vulkan.VK10.vkCreateShaderModule;
+import static org.lwjgl.vulkan.VK10.vkDestroyPipeline;
+import static org.lwjgl.vulkan.VK10.vkDestroyPipelineLayout;
 import static org.lwjgl.vulkan.VK10.vkDestroyShaderModule;
 
 import java.nio.ByteBuffer;
@@ -68,10 +53,11 @@ import org.lwjgl.vulkan.VkPipelineVertexInputStateCreateInfo;
 import org.lwjgl.vulkan.VkPipelineViewportStateCreateInfo;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkShaderModuleCreateInfo;
+import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
+import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 import org.lwjgl.vulkan.VkViewport;
 
 import helloVulkan.ShaderSPIRVUtils.SPIRV;
-import helloVulkan.VertexAttribsBinding.AttribInfo;
 
 
 // Buffer bindings in opengl look like this
@@ -109,6 +95,13 @@ import helloVulkan.VertexAttribsBinding.AttribInfo;
 // We don't care what our vkbindings are, as long as it's in the correct order
 // as we're passing the lists in when we call vkCmdBindVertexArrays().
 
+// TODO: Properly fix up compileshaders
+// TODO: Turn gl2vkBinding to buffer pointers so that we can use it in vkCmdBindVertexBuffers.
+// It's very simple, when you call drawArrays in GL2VK, simply pass a list of buffers[].bufferID
+// to the command.
+// Maybe not so simple, because challenge to overcome: we need to somehow pass that big ol array
+// through atomicLongs.
+
 public class GL2VKPipeline {
 
 	private VulkanSystem system;
@@ -131,6 +124,10 @@ public class GL2VKPipeline {
 	public GL2VKPipeline(VulkanSystem system) {
     	this.system = system;
     	this.vkbase = system.vkbase;
+	}
+	
+	// Only use this constructor for testing purposes
+	public GL2VKPipeline() {
 	}
 
     private long createShaderModule(ByteBuffer spirvCode) {
@@ -192,8 +189,8 @@ public class GL2VKPipeline {
 
             VkPipelineVertexInputStateCreateInfo vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc(stack);
             vertexInputInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
-            vertexInputInfo.pVertexBindingDescriptions(getBindingDescriptions(stack));
-            vertexInputInfo.pVertexAttributeDescriptions(getAttributeDescriptions(stack));
+            vertexInputInfo.pVertexBindingDescriptions(getBindingDescriptions());
+            vertexInputInfo.pVertexAttributeDescriptions(getAttributeDescriptions());
 
             // ===> ASSEMBLY STAGE <===
 
@@ -299,6 +296,31 @@ public class GL2VKPipeline {
         }
     }
     
+    public VkVertexInputBindingDescription.Buffer getBindingDescriptions() {
+		VkVertexInputBindingDescription.Buffer bindingDescriptions =
+		VkVertexInputBindingDescription.calloc(gl2vkBinding.size());
+		
+		int i = 0;
+    	for (VertexAttribsBinding vab : gl2vkBinding.values()) {
+    		vab.updateBindingDescription(bindingDescriptions.get(i++));
+    	}
+    	
+    	return bindingDescriptions.rewind();
+    }
+    
+    public VkVertexInputAttributeDescription.Buffer getAttributeDescriptions() {
+		VkVertexInputAttributeDescription.Buffer attributeDescriptions =
+		VkVertexInputAttributeDescription.calloc(attribInfo.nameToLocation.size());
+		
+		int i = 0;
+    	for (VertexAttribsBinding vab : gl2vkBinding.values()) {
+    		vab.updateAttributeDescriptions(attributeDescriptions, i);
+    		i += vab.getSize();
+    	}
+		
+		return attributeDescriptions;
+    }
+    
     // Used when glBindBuffer is called, so that we know to create a new binding
     // for our vertexattribs vulkan pipeline. This should be called in glVertexAttribPointer
     // function.
@@ -321,15 +343,25 @@ public class GL2VKPipeline {
     	}
     	gl2vkBinding.get(boundBinding).vertexAttribPointer(location, size, offset, stride);
     }
+    
+    // Not actually used but cool to have
+    public void vertexAttribPointer(int location) {
+    	gl2vkBinding.get(boundBinding).vertexAttribPointer(location);
+    }
 
     
     public void compileVertex(String source) {
-        vertShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.vert", VERTEX_SHADER);
+//        vertShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.vert", VERTEX_SHADER);
         attribInfo = new ShaderAttribInfo(source);
     }
 
     
     public void compileFragment(String source) {
-        fragShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.frag", FRAGMENT_SHADER);
+//        fragShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.frag", FRAGMENT_SHADER);
+    }
+    
+    public void clean() {
+        vkDestroyPipeline(system.device, graphicsPipeline, null);
+        vkDestroyPipelineLayout(system.device, pipelineLayout, null);
     }
 }
