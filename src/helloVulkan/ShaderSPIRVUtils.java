@@ -69,6 +69,31 @@ public class ShaderSPIRVUtils {
 
         return new SPIRV(result, shaderc_result_get_bytes(result));
     }
+    
+
+    public static SPIRV compileShader(String source, ShaderKind shaderKind) {
+
+        long compiler = shaderc_compiler_initialize();
+
+        if(compiler == NULL) {
+            throw new RuntimeException("Failed to create shader compiler");
+        }
+
+        long result = shaderc_compile_into_spv(compiler, source, shaderKind.kind, "shader", "main", NULL);
+
+        if(result == NULL) {
+            throw new RuntimeException("Failed to compile shader into SPIR-V");
+        }
+
+        if(shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success) {
+            throw new RuntimeException("Failed to compile shader into SPIR-V:\n " + shaderc_result_get_error_message(result));
+        }
+
+        shaderc_compiler_release(compiler);
+
+        return new SPIRV(result, shaderc_result_get_bytes(result));
+    }
+
 
     public enum ShaderKind {
 

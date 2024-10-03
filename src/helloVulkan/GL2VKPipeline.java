@@ -1,8 +1,5 @@
 package helloVulkan;
 
-import static helloVulkan.ShaderSPIRVUtils.compileShaderFile;
-import static helloVulkan.ShaderSPIRVUtils.ShaderKind.FRAGMENT_SHADER;
-import static helloVulkan.ShaderSPIRVUtils.ShaderKind.VERTEX_SHADER;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.VK_COLOR_COMPONENT_A_BIT;
 import static org.lwjgl.vulkan.VK10.VK_COLOR_COMPONENT_B_BIT;
@@ -38,6 +35,7 @@ import static org.lwjgl.vulkan.VK10.vkDestroyShaderModule;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkGraphicsPipelineCreateInfo;
@@ -107,15 +105,18 @@ public class GL2VKPipeline {
 	private VulkanSystem system;
 	private VKSetup vkbase;
 	
-	private SPIRV vertShaderSPIRV = null;
-	private SPIRV fragShaderSPIRV = null;
+	public SPIRV vertShaderSPIRV = null;
+	public SPIRV fragShaderSPIRV = null;
 
     private long pipelineLayout;
     public long graphicsPipeline;
     
-	private ShaderAttribInfo attribInfo = null;
+	public ShaderAttribInfo attribInfo = null;
 	
 	private HashMap<Integer, VertexAttribsBinding> gl2vkBinding = new HashMap<Integer, VertexAttribsBinding>();
+	private HashMap<String, Integer> attribNameToGLLocation = new HashMap<String, Integer>();
+	private int[] GLLocationToVKLocation = new int[1024];
+	
 	private int boundBinding = 0;
 	private int totalVertexAttribsBindings = 0;
 	
@@ -131,7 +132,6 @@ public class GL2VKPipeline {
 	}
 
     private long createShaderModule(ByteBuffer spirvCode) {
-
         try(MemoryStack stack = stackPush()) {
 
             VkShaderModuleCreateInfo createInfo = VkShaderModuleCreateInfo.calloc(stack);
@@ -153,7 +153,7 @@ public class GL2VKPipeline {
     
     
 
-    private void createGraphicsPipeline() {
+    public void createGraphicsPipeline() {
 
         try(MemoryStack stack = stackPush()) {
 
@@ -162,10 +162,14 @@ public class GL2VKPipeline {
         	if (vertShaderSPIRV == null || fragShaderSPIRV == null) {
         		throw new RuntimeException("Shaders must be compiled before calling createGraphicsPipeline()");
         	}
+        	
+        	// Completely unnecessary code
+    		long vertShaderModule = createShaderModule(vertShaderSPIRV.bytecode());
+    		long fragShaderModule = createShaderModule(fragShaderSPIRV.bytecode());
             
             
-            long vertShaderModule = createShaderModule(vertShaderSPIRV.bytecode());
-            long fragShaderModule = createShaderModule(fragShaderSPIRV.bytecode());
+//            long vertShaderModule = createShaderModule(vertShaderSPIRV.bytecode());
+//            long fragShaderModule = createShaderModule(fragShaderSPIRV.bytecode());
 
             ByteBuffer entryPoint = stack.UTF8("main");
 
@@ -288,11 +292,15 @@ public class GL2VKPipeline {
 
             // ===> RELEASE RESOURCES <===
 
-            vkDestroyShaderModule(vkbase.device, vertShaderModule, null);
-            vkDestroyShaderModule(vkbase.device, fragShaderModule, null);
 
             vertShaderSPIRV.free();
             fragShaderSPIRV.free();
+            
+    		vkDestroyShaderModule(vkbase.device, vertShaderModule, null);
+    		vkDestroyShaderModule(vkbase.device, fragShaderModule, null);
+
+            vertShaderModule = -1;
+            fragShaderModule = -1;
         }
     }
     
@@ -321,6 +329,15 @@ public class GL2VKPipeline {
 		return attributeDescriptions;
     }
     
+    public int getHashState() {
+    	int hash = 0;
+    	// TODO: Hash vertex and fragment shader code.
+    	for (VertexAttribsBinding vab : gl2vkBinding.values()) {
+    		hash += vab.getHashState();
+    	}
+    	return hash;
+    }
+    
     // Used when glBindBuffer is called, so that we know to create a new binding
     // for our vertexattribs vulkan pipeline. This should be called in glVertexAttribPointer
     // function.
@@ -334,31 +351,70 @@ public class GL2VKPipeline {
     	// Tell me a better way to do it though.
     }
     
-    public void vertexAttribPointer(int location, int size, int offset, int stride) {
+    public void vertexAttribPointer(int vklocation, int size, int offset, int stride) {
     	// Remember, a gl buffer binding of 0 means no bound buffer,
     	// and by default in this class, means bind() hasn't been called.
     	if (boundBinding == 0) {
     		System.err.println("BUG WARNING  vertexAttribPointer called with no bound buffer.");
     		return;
     	}
-    	gl2vkBinding.get(boundBinding).vertexAttribPointer(location, size, offset, stride);
+    	gl2vkBinding.get(boundBinding).vertexAttribPointer(vklocation, size, offset, stride);
     }
     
     // Not actually used but cool to have
-    public void vertexAttribPointer(int location) {
-    	gl2vkBinding.get(boundBinding).vertexAttribPointer(location);
-    }
+//    public void vertexAttribPointer(int location) {
+//    	gl2vkBinding.get(boundBinding).vertexAttribPointer(location);
+//    }
+    
+
 
     
-    public void compileVertex(String source) {
-//        vertShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.vert", VERTEX_SHADER);
-        attribInfo = new ShaderAttribInfo(source);
+    
+    public int addAttribInfo(ShaderAttribInfo attribInfo, int startIndex) {
+    	this.attribInfo = attribInfo;
+        // Of course we need a way to get our locations from the name.
+    	int count = 0;
+        for (Entry<String, Integer> entry : attribInfo.nameToLocation.entrySet()) {
+        	attribNameToGLLocation.put(entry.getKey(), startIndex);
+        	GLLocationToVKLocation[startIndex] = entry.getValue();
+        	startIndex++;
+        	count++;
+        }
+        
+        // Returns the iterations
+        return count;
+    }
+    
+    public int getGLAttribLocation(String name) {
+    	if (!attribNameToGLLocation.containsKey(name)) return -1;
+    	return attribNameToGLLocation.get(name);
     }
 
-    
-    public void compileFragment(String source) {
-//        fragShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.frag", FRAGMENT_SHADER);
+    public int getVKAttribLocation(int glAttribLocation) {
+    	return GLLocationToVKLocation[glAttribLocation];
+    	
     }
+
+
+//  public int getAttribvkLocation(String name) {
+//  	if (!attribNameToLocation.containsKey(name)) return -1;
+//  	return attribNameToLocation.get(name);
+//  }
+    
+    // Type args
+    // 1: vertex
+    // 2: fragment
+    // Unused cus it's just easier to delete it ourselves
+//    public void deleteShaderModule(int type) {
+//    	switch (type) {
+//    	case 1:
+//    		vkDestroyShaderModule(vkbase.device, vertShaderModule, null);
+//    		break;
+//    	case 2:
+//    		vkDestroyShaderModule(vkbase.device, fragShaderModule, null);
+//    		break;
+//    	}
+//    }
     
     public void clean() {
         vkDestroyPipeline(system.device, graphicsPipeline, null);
