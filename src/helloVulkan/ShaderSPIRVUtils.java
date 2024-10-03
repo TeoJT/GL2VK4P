@@ -62,7 +62,7 @@ public class ShaderSPIRVUtils {
         }
 
         if(shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success) {
-            throw new RuntimeException("Failed to compile shader " + filename + "into SPIR-V:\n " + shaderc_result_get_error_message(result));
+            throw new RuntimeException(shaderc_result_get_error_message(result));
         }
 
         shaderc_compiler_release(compiler);
@@ -82,11 +82,11 @@ public class ShaderSPIRVUtils {
         long result = shaderc_compile_into_spv(compiler, source, shaderKind.kind, "shader", "main", NULL);
 
         if(result == NULL) {
-            throw new RuntimeException("Failed to compile shader into SPIR-V");
+            throw new RuntimeException("(No error information found)");
         }
 
         if(shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success) {
-            throw new RuntimeException("Failed to compile shader into SPIR-V:\n " + shaderc_result_get_error_message(result));
+            throw new RuntimeException(shaderc_result_get_error_message(result));
         }
 
         shaderc_compiler_release(compiler);

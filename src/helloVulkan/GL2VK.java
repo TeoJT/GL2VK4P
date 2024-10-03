@@ -6,7 +6,7 @@ import helloVulkan.ShaderSPIRVUtils.SPIRV;
 import helloVulkan.ShaderSPIRVUtils.ShaderKind;
 
 import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-import static helloVulkan.ShaderSPIRVUtils.compileShaderFile;
+import static helloVulkan.ShaderSPIRVUtils.compileShader;
 import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
 import java.nio.ByteBuffer;
@@ -20,6 +20,12 @@ public class GL2VK {
 	public static final int GL_FRAGMENT_SHADER = 2;
 	
 	public static final int GL_COMPILE_STATUS = 1;
+	public static final int GL_INFO_LOG_LENGTH = 2;
+	
+	public static final int GL_TRUE = 1;
+	public static final int GL_FALSE = 0;
+	
+	public static final int DEBUG_MODE = 42;
 
 	// Shaders aren't actually anything significant, they're really temporary data structures
 	// to create a vulkan pipeline.
@@ -28,6 +34,7 @@ public class GL2VK {
 		public boolean successfulCompile = false;
 		public int type;
 		public SPIRV spirv = null;
+		public String log = "";
 		
 		// Use for vertex shaders only. See notes in glCompileShader
 		// for why we're oddly putting this here.
@@ -48,7 +55,7 @@ public class GL2VK {
 		}
 	}
 	
-	private VulkanSystem system;
+	private VulkanSystem system = null;
 	
 	// TODO: Change these to arrayLists?
 	private GraphicsBuffer[] buffers = new GraphicsBuffer[4096];
@@ -70,6 +77,7 @@ public class GL2VK {
 	// will run without error on all hardware. So... what if we were to ignore the warnings for the 
 	// sake of performance? That's what dangerMode does.
 	private boolean dangerMode = false;
+	private boolean warningsEnabled = true;
 	
 	private int bufferIndex = 1;
 	private int programIndex = 1;
@@ -85,13 +93,32 @@ public class GL2VK {
 	public GL2VK() {
 		system = new VulkanSystem();
 		system.initVulkan();
-		
+	}
+
+	public GL2VK(int debugNumber) {
+		if (debugNumber != DEBUG_MODE) {
+			system = new VulkanSystem();
+			system.initVulkan();
+		}
+	}
+	
+	private void warn(String mssg) {
+		if (warningsEnabled) {
+			System.err.println("GL2VK WARNING  "+mssg);
+		}
 	}
 	
 	public void glGenBuffers(int count, IntBuffer out) {
 		for (int i = 0; i < count; i++) {
 			// Create new buffer object
-			buffers[bufferIndex] = new GraphicsBuffer(system);
+			// We may be in debug mode so we may not use system
+			if (system == null) {
+				buffers[bufferIndex] = new GraphicsBuffer();
+			}
+			else {
+				buffers[bufferIndex] = new GraphicsBuffer(system);
+			}
+			
 			// Put it into the int array so we get back our
 			// ids to our allocated buffers.
 			out.put(i, bufferIndex++);
@@ -116,6 +143,14 @@ public class GL2VK {
 			break;
 		}
 		
+		if (boundBuffer <= 0) {
+			warn("glBufferData: no bound buffer.");
+			return;
+		}
+		if (buffers[boundBuffer] == null) {
+			warn("glBufferData: buffer "+boundBuffer+" doesn't exist.");
+			return;
+		}
 		
 		// Note: target is for specifying vertex_array, indicies_array
 		// which we'll likely need. Usage, I have no idea what it does.
@@ -127,8 +162,9 @@ public class GL2VK {
 	}
 	
 	public void glDrawArrays(int mode, int first, int count) {
-		// TODO: *5 is just a placeholder for a fixed shader.
-		system.nodeDrawArrays(buffers[boundBuffer].bufferID, count*5, 0);
+		int stride = programs[boundProgram].attribInfo.bindingSize;
+		System.out.println("CHECK YOUR STRIDE: "+stride);
+		system.nodeDrawArrays(buffers[boundBuffer].bufferID, count*stride, 0);
 	}
 	
 	// Probably not going to fully implement glEnableVertexAttribArray or glDisableVertexAttribArray
@@ -136,6 +172,14 @@ public class GL2VK {
 	// indeed, want to use the vertexAttrib. And it's not like glDisableVertexAttribArray is going to
 	// have any effect, you can't disable vertex attribs in a pipeline that's already been created.
 	public void glVertexAttribPointer(int glindex, int size, int type, boolean normalized, int stride, int offset) {
+		if (boundBuffer <= 0) {
+			warn("glVertexAttribPointer: don't forget to bind a buffer!");
+		}
+		if (glAttribs[glindex] == null) {
+			warn("glVertexAttribPointer: Vertex attrib "+glindex+" doesn't exist.");
+			return;
+		}
+		
 		// Convert from gl index to vk location
 		// We also need the program to see what we're doing
 		GL2VKPipeline program = glAttribs[glindex].program;
@@ -153,7 +197,10 @@ public class GL2VK {
 	}
 	
 	public int glGetAttribLocation(int program, String name) {
-		if (programs[program] == null) return -1;
+		if (programs[program] == null) {
+			warn("glGetAttribLocation: program "+program+" doesn't exist.");
+			return 0;
+		}
 		
 		return programs[program].getGLAttribLocation(name);
 	}
@@ -167,11 +214,17 @@ public class GL2VK {
 	
 	// TODO: add minor error checking.
 	public void glShaderSource(int shader, String source) {
+		if (shaders[shader] == null) {
+			warn("glShaderSource: shader "+shader+" doesn't exist.");
+		}
 		// TODO: convert from opengl-style glsl to vulkan glsl
 		shaders[shader].source = source;
 	}
 
 	public String glGetShaderSource(int shader) {
+		if (shaders[shader] == null) {
+			warn("glGetShaderSource: shader "+shader+" doesn't exist.");
+		}
 		return shaders[shader].source;
 	}
 	
@@ -182,6 +235,10 @@ public class GL2VK {
 	// This is simple stuff to understand (i hope)
 	public void glCompileShader(int shader) {
 		GLShader sh = shaders[shader];
+		if (sh == null) {
+			warn("glCompileShader: shader "+shader+" doesn't exist.");
+		}
+		
 		ShaderKind shaderKind;
 		if (sh.type == GL_VERTEX_SHADER) {
 			shaderKind = ShaderKind.VERTEX_SHADER;
@@ -191,8 +248,16 @@ public class GL2VK {
 		}
 		else shaderKind = ShaderKind.VERTEX_SHADER;
 		
-		sh.spirv = compileShaderFile(sh.source, shaderKind);
-		sh.successfulCompile = true;
+		try {
+			sh.spirv = compileShader(sh.source, shaderKind);
+			sh.successfulCompile = true;
+		}
+		catch (RuntimeException e) {
+			sh.successfulCompile = false;
+			sh.log = e.getMessage();
+		}
+		
+		
 		// TODO: failed compiles just throws an exception. Actually check to see if it compiled successfully
 		// or not.
 		
@@ -225,14 +290,21 @@ public class GL2VK {
 	
 	public void glAttachShader(int program, int shader) {
 		GLShader sh = shaders[shader];
+		if (sh == null) {
+			warn("glGetShaderiv: shader "+shader+" doesn't exist.");
+			return;
+		}
+		if (!sh.successfulCompile) {
+			warn("glAttachShader: Can't attach shader that hasn't been compiled or failed compilation.");
+			return;
+		}
 		if (sh.type == GL_VERTEX_SHADER) {
 			programs[program].vertShaderSPIRV = shaders[shader].spirv;
 			// Of course we'll need the attrib info to our pipeline.
 			// This function has been modified so that instead of vk locations, we get
 			// back gl locations.
 			// Welcome to the absolute unhinged nature of opengl.
-			int count = programs[program].addAttribInfo(sh.attribInfo, attribIndex);
-			attribIndex += count;
+			programs[program].addAttribInfo(sh.attribInfo, attribIndex);
 			// And then
 			// We'll need gl attribs since 
 			// gl attrib locations != vulkan attrib locations.
@@ -245,13 +317,29 @@ public class GL2VK {
 	
 	// Mainly just used for getting shader compilation status.
 	public void glGetShaderiv(int shader, int pname, IntBuffer params) {
+		GLShader sh = shaders[shader];
+		if (sh == null) {
+			warn("glGetShaderiv: shader "+shader+" doesn't exist.");
+			return;
+		}
 		if (pname == GL_COMPILE_STATUS) {
-			int status = 0;
-			if (shaders[shader].successfulCompile == true) {
-				status = 1;
+			int status = GL_FALSE;
+			if (sh.successfulCompile == true) {
+				status = GL_TRUE;
 			}
 			params.put(0, status);
 		}
+		if (pname == GL_INFO_LOG_LENGTH) {
+			params.put(0, shaders[shader].log.length());
+		}
+	}
+	
+	public String glGetShaderInfoLog(int shader) {
+		if (shaders[shader] == null) {
+			warn("glGetShaderInfoLog: shader "+shader+" doesn't exist.");
+			return "";
+		}
+		return shaders[shader].log;
 	}
 	
 	// Because we create our pipeline on draw command calls, this effectively does nothing.
@@ -292,5 +380,9 @@ public class GL2VK {
 	
 	public void setDangerMode(boolean mode) {
 		dangerMode = mode;
+	}
+	
+	public GL2VKPipeline getPipeline(int program) {
+		return programs[program];
 	}
 }

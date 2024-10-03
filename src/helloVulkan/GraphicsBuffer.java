@@ -39,6 +39,10 @@ public class GraphicsBuffer {
     	this.vkbase = system.vkbase;
     }
     
+    // Debug mode constructor
+    public GraphicsBuffer() {
+    }
+    
     
     // Releases any previous buffers and creates a buffer IF
     // - There's no previous buffer

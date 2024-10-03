@@ -362,9 +362,9 @@ public class GL2VKPipeline {
     }
     
     // Not actually used but cool to have
-//    public void vertexAttribPointer(int location) {
-//    	gl2vkBinding.get(boundBinding).vertexAttribPointer(location);
-//    }
+    public void vertexAttribPointer(int location) {
+    	gl2vkBinding.get(boundBinding).vertexAttribPointer(location);
+    }
     
 
 
@@ -394,6 +394,17 @@ public class GL2VKPipeline {
     	return GLLocationToVKLocation[glAttribLocation];
     	
     }
+    
+    // Depricated but leave these in for the unit tests
+	public void compileVertex(String source) {
+	//      vertShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.vert", VERTEX_SHADER);
+	  attribInfo = new ShaderAttribInfo(source);
+	}
+
+  
+	public void compileFragment(String source) {
+//    	  fragShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.frag", FRAGMENT_SHADER);
+	}
 
 
 //  public int getAttribvkLocation(String name) {
