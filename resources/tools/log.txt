@@ -1,1070 +1,195 @@
-all CMD_DRAW_ARRAYS (index 99)
-(2) call CMD_DRAW_ARRAYS (index 100)
-(3) call CMD_DRAW_ARRAYS (index 91)
-(3) INTERRUPT
-(3) rrupt State 6
-(2) WAKEUP
-(2) 1
-(3) call CMD_DRAW_ARRAYS (index 92)
-(3) call CMD_DRAW_ARRAYS (index 93)
-(3) call CMD_DRAW_ARRAYS (index 94)
-(3) call CMD_DRAW_ARRAYS (index 95)
-(3) call CMD_DRAW_ARRAYS (index 96)
-(3) call CMD_DRAW_ARRAYS (index 97)
-(3) call CMD_DRAW_ARRAYS (index 98)
-(3) call CMD_DRAW_ARRAYS (index 99)
-(3) call CMD_DRAW_ARRAYS (index 100)
-(4) call CMD_DRAW_ARRAYS (index 91)
-(4) INTERRUPT
-(4) rrupt State 6
-(2) CMD_DRAW_ARRAYS (index 99)
-(4) call CMD_DRAW_ARRAYS (index 92)
-(4) WAKEUP
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 100)
-(3) WAKEUP
-(3) 1
-(2) 0
+
+Validation layer: windows_get_device_registry_files: GUID for 2 is not SoftwareComponent skipping
+Validation layer: windows_get_device_registry_files: GUID for 3 is not SoftwareComponent skipping
+Validation layer: Searching for ICD drivers named .\igvk64.dll
+Validation layer: Searching for ICD drivers named .\nvoglv64.dll
+Validation layer: Loading layer library C:\VulkanSDK\1.3.275.0\Bin\.\VkLayer_khronos_validation.dll
+Validation layer: Loading layer library C:\ProgramData\obs-studio-hook\.\graphics-hook64.dll
+Validation layer: Loading layer library C:\WINDOWS\System32\DriverStore\FileRepository\nvmsoi.inf_amd64_f617ba55ceca6e18\.\nvoglv64.dll
 (2) NOW SLEEPING
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 91)
-(4) call CMD_DRAW_ARRAYS (index 93)
-(2) State 1
-(3) CMD_DRAW_ARRAYS (index 91)
-(4) 1
-(3) 1
-(4) CMD_DRAW_ARRAYS (index 92)
-(4) call CMD_DRAW_ARRAYS (index 94)
-(3) CMD_DRAW_ARRAYS (index 92)
-(4) call CMD_DRAW_ARRAYS (index 95)
-(4) call CMD_DRAW_ARRAYS (index 96)
-(4) call CMD_DRAW_ARRAYS (index 97)
-(4) call CMD_DRAW_ARRAYS (index 98)
-(4) call CMD_DRAW_ARRAYS (index 99)
-(4) call CMD_DRAW_ARRAYS (index 100)
-(5) call CMD_DRAW_ARRAYS (index 91)
-(5) INTERRUPT
-(5) rrupt State 6
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 93)
-(3) 1
-(5) call CMD_DRAW_ARRAYS (index 92)
-(5) call CMD_DRAW_ARRAYS (index 93)
-(5) call CMD_DRAW_ARRAYS (index 94)
-(5) call CMD_DRAW_ARRAYS (index 95)
-(5) call CMD_DRAW_ARRAYS (index 96)
-(5) call CMD_DRAW_ARRAYS (index 97)
-(3) CMD_DRAW_ARRAYS (index 93)
-(5) WAKEUP
-(5) 1
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 94)
-(5) CMD_DRAW_ARRAYS (index 91)
-(4) 1
-(3) 1
-(5) call CMD_DRAW_ARRAYS (index 98)
-(5) 1
-(3) CMD_DRAW_ARRAYS (index 94)
-(4) CMD_DRAW_ARRAYS (index 95)
-(3) 1
-(5) CMD_DRAW_ARRAYS (index 92)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 96)
-(3) CMD_DRAW_ARRAYS (index 95)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 97)
-(3) 1
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 98)
-(3) CMD_DRAW_ARRAYS (index 96)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 99)
-(5) 1
-(4) 1
-(5) CMD_DRAW_ARRAYS (index 93)
-(4) CMD_DRAW_ARRAYS (index 100)
-(5) 1
-(3) 1
-(4) 0
-(4) NOW SLEEPING
-(4) State 1
-(5) CMD_DRAW_ARRAYS (index 94)
-(3) CMD_DRAW_ARRAYS (index 97)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 95)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 98)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 96)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 99)
-(5) 1
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 100)
-(5) CMD_DRAW_ARRAYS (index 97)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 98)
-(3) 0
-(5) 0
+(0) NOW SLEEPING
+(1) NOW SLEEPING
 (3) NOW SLEEPING
-(3) State 1
+(4) NOW SLEEPING
 (5) NOW SLEEPING
-(5) State 1
+(6) NOW SLEEPING
+Validation layer: Validation Error: [ VUID-VkBufferCreateInfo-sharingMode-01419 ] | MessageID = 0x1c5b2d58 | vkCreateBuffer(): pCreateInfo->pQueueFamilyIndices[1] (0) is also in pQueueFamilyIndices[0]. The Vulkan spec states: If sharingMode is VK_SHARING_MODE_CONCURRENT, each element of pQueueFamilyIndices must be unique and must be less than pQueueFamilyPropertyCount returned by either vkGetPhysicalDeviceQueueFamilyProperties2 or vkGetPhysicalDeviceQueueFamilyProperties for the physicalDevice that was used to create device (https://vulkan.lunarg.com/doc/view/1.3.275.0/windows/1.3-extensions/vkspec.html#VUID-VkBufferCreateInfo-sharingMode-01419)
+Validation layer: Validation Error: [ VUID-VkBufferCreateInfo-sharingMode-01419 ] | MessageID = 0x1c5b2d58 | vkCreateBuffer(): pCreateInfo->pQueueFamilyIndices[1] (0) is also in pQueueFamilyIndices[0]. The Vulkan spec states: If sharingMode is VK_SHARING_MODE_CONCURRENT, each element of pQueueFamilyIndices must be unique and must be less than pQueueFamilyPropertyCount returned by either vkGetPhysicalDeviceQueueFamilyProperties2 or vkGetPhysicalDeviceQueueFamilyProperties for the physicalDevice that was used to create device (https://vulkan.lunarg.com/doc/view/1.3.275.0/windows/1.3-extensions/vkspec.html#VUID-VkBufferCreateInfo-sharingMode-01419)
+(0) call begin record
+(0) INTERRUPT
+(1) call begin record
+(1) INTERRUPT
+(0) WAKEUP
+(1) WAKEUP
+(2) call begin record
+(1) CMD_BEGIN_RECORD
+(0) CMD_BEGIN_RECORD
+(2) INTERRUPT
+(3) call begin record
+(2) WAKEUP
+(3) INTERRUPT
+(2) CMD_BEGIN_RECORD
+(4) call begin record
+(4) INTERRUPT
+(3) WAKEUP
+(5) call begin record
+(4) WAKEUP
+(3) CMD_BEGIN_RECORD
+(4) CMD_BEGIN_RECORD
 (5) INTERRUPT
-(5) rrupt State 6
-(5) call CMD_DRAW_ARRAYS (index 99)
-(5) call CMD_DRAW_ARRAYS (index 100)
-(6) call CMD_DRAW_ARRAYS (index 91)
+(6) call begin record
 (6) INTERRUPT
 (5) WAKEUP
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 99)
-(6) rrupt State 6
-(5) 1
-(6) call CMD_DRAW_ARRAYS (index 92)
-(6) call CMD_DRAW_ARRAYS (index 93)
-(6) call CMD_DRAW_ARRAYS (index 94)
-(6) call CMD_DRAW_ARRAYS (index 95)
+(5) CMD_BEGIN_RECORD
 (6) WAKEUP
-(5) CMD_DRAW_ARRAYS (index 100)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 91)
-(6) call CMD_DRAW_ARRAYS (index 96)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 92)
-(5) 0
+(6) CMD_BEGIN_RECORD
+(1) NOW SLEEPING
+(2) NOW SLEEPING
+(0) NOW SLEEPING
+(3) NOW SLEEPING
 (5) NOW SLEEPING
-(5) State 1
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 93)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 94)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 95)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 96)
-(6) 0
-(6) NOW SLEEPING
-(6) INTERRUPT
-(6) rrupt State 6
-(6) State 1
-(6) call CMD_DRAW_ARRAYS (index 97)
-(6) call CMD_DRAW_ARRAYS (index 98)
-(6) call CMD_DRAW_ARRAYS (index 99)
-(6) call CMD_DRAW_ARRAYS (index 100)
-(6) WAKEUP
-(6) 1
-(7) call CMD_DRAW_ARRAYS (index 91)
-(7) INTERRUPT
-(6) CMD_DRAW_ARRAYS (index 97)
-(7) rrupt State 6
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 98)
-(7) call CMD_DRAW_ARRAYS (index 92)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 99)
-(7) WAKEUP
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 91)
-(6) 1
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 92)
-(6) CMD_DRAW_ARRAYS (index 100)
-(7) call CMD_DRAW_ARRAYS (index 93)
-(7) call CMD_DRAW_ARRAYS (index 94)
-(6) 0
-(6) NOW SLEEPING
-(7) call CMD_DRAW_ARRAYS (index 95)
-(6) State 1
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 93)
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 94)
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 95)
-(7) 0
-(7) NOW SLEEPING
-(7) INTERRUPT
-(7) rrupt State 6
-(7) State 1
-(7) call CMD_DRAW_ARRAYS (index 96)
-(7) call CMD_DRAW_ARRAYS (index 97)
-(7) call CMD_DRAW_ARRAYS (index 98)
-(7) call CMD_DRAW_ARRAYS (index 99)
-(7) call CMD_DRAW_ARRAYS (index 100)
-(7) WAKEUP
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 96)
-(0) call CMD_DRAW_ARRAYS (index 101)
-(0) INTERRUPT
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 97)
-(0) rrupt State 6
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 98)
-(0) call CMD_DRAW_ARRAYS (index 102)
-(7) 1
-(0) WAKEUP
-(7) CMD_DRAW_ARRAYS (index 99)
-(0) call CMD_DRAW_ARRAYS (index 103)
-(7) 1
-(0) 1
-(7) CMD_DRAW_ARRAYS (index 100)
-(0) CMD_DRAW_ARRAYS (index 101)
-(7) 0
-(7) NOW SLEEPING
-(0) 1
-(7) State 1
-(0) CMD_DRAW_ARRAYS (index 102)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 103)
-(0) 0
-(0) NOW SLEEPING
-(0) INTERRUPT
-(0) rrupt State 6
-(0) call CMD_DRAW_ARRAYS (index 104)
-(0) call CMD_DRAW_ARRAYS (index 105)
-(0) State 1
-(0) call CMD_DRAW_ARRAYS (index 106)
-(0) call CMD_DRAW_ARRAYS (index 107)
-(0) WAKEUP
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 104)
-(0) call CMD_DRAW_ARRAYS (index 108)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 105)
-(0) call CMD_DRAW_ARRAYS (index 109)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 106)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 107)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 108)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 109)
-(0) 0
-(0) NOW SLEEPING
-(0) INTERRUPT
-(0) rrupt State 6
-(0) State 1
-(0) call CMD_DRAW_ARRAYS (index 110)
-(0) WAKEUP
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 110)
-(1) call CMD_DRAW_ARRAYS (index 101)
-(1) INTERRUPT
-(1) rrupt State 6
-(0) 0
-(0) NOW SLEEPING
-(1) WAKEUP
-(1) call CMD_DRAW_ARRAYS (index 102)
-(1) 0
-(1) NOW SLEEPING
-(1) INTERRUPT
-(1) rrupt State 6
-(0) State 1
-(1) call CMD_DRAW_ARRAYS (index 103)
-(1) State 1
-(1) call CMD_DRAW_ARRAYS (index 104)
-(1) call CMD_DRAW_ARRAYS (index 105)
-(1) call CMD_DRAW_ARRAYS (index 106)
-(1) call CMD_DRAW_ARRAYS (index 107)
-(1) WAKEUP
-(1) 0
-(1) NOW SLEEPING
-(1) call CMD_DRAW_ARRAYS (index 108)
-(1) INTERRUPT
-(1) State 1
-(1) rrupt State 6
-(1) call CMD_DRAW_ARRAYS (index 109)
-(1) call CMD_DRAW_ARRAYS (index 110)
-(2) call CMD_DRAW_ARRAYS (index 101)
-(2) INTERRUPT
-(2) rrupt State 6
-(1) WAKEUP
-(2) call CMD_DRAW_ARRAYS (index 102)
-(2) call CMD_DRAW_ARRAYS (index 103)
-(2) call CMD_DRAW_ARRAYS (index 104)
-(2) call CMD_DRAW_ARRAYS (index 105)
-(2) call CMD_DRAW_ARRAYS (index 106)
-(2) call CMD_DRAW_ARRAYS (index 107)
-(2) call CMD_DRAW_ARRAYS (index 108)
-(1) 0
-(1) NOW SLEEPING
-(1) State 1
-(2) call CMD_DRAW_ARRAYS (index 109)
-(2) WAKEUP
-(2) call CMD_DRAW_ARRAYS (index 110)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 101)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 102)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 103)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 104)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 105)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 106)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 107)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 108)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 109)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 110)
-(2) 0
-(2) NOW SLEEPING
-(2) INTERRUPT
-(2) rrupt State 6
-(2) State 1
-(3) call CMD_DRAW_ARRAYS (index 101)
-(3) INTERRUPT
-(3) rrupt State 6
-(2) WAKEUP
-(2) 0
-(3) call CMD_DRAW_ARRAYS (index 102)
-(3) call CMD_DRAW_ARRAYS (index 103)
-(3) WAKEUP
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 101)
-(2) NOW SLEEPING
-(2) State 1
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 102)
-(3) call CMD_DRAW_ARRAYS (index 104)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 103)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 104)
-(3) 0
-(3) NOW SLEEPING
-(3) INTERRUPT
-(3) rrupt State 6
-(3) State 1
-(3) call CMD_DRAW_ARRAYS (index 105)
-(3) call CMD_DRAW_ARRAYS (index 106)
-(3) call CMD_DRAW_ARRAYS (index 107)
-(3) call CMD_DRAW_ARRAYS (index 108)
-(3) WAKEUP
-(3) 1
-(3) call CMD_DRAW_ARRAYS (index 109)
-(3) call CMD_DRAW_ARRAYS (index 110)
-(4) call CMD_DRAW_ARRAYS (index 101)
-(3) CMD_DRAW_ARRAYS (index 105)
-(4) INTERRUPT
-(3) 1
-(4) rrupt State 6
-(3) CMD_DRAW_ARRAYS (index 106)
-(4) call CMD_DRAW_ARRAYS (index 102)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 107)
-(4) WAKEUP
-(3) 1
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 101)
-(4) call CMD_DRAW_ARRAYS (index 103)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 102)
-(3) CMD_DRAW_ARRAYS (index 108)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 103)
-(3) 1
-(4) 0
 (4) NOW SLEEPING
-(4) INTERRUPT
-(4) rrupt State 6
-(3) CMD_DRAW_ARRAYS (index 109)
-(4) call CMD_DRAW_ARRAYS (index 104)
-(3) 1
-(4) State 1
-(3) CMD_DRAW_ARRAYS (index 110)
-(4) call CMD_DRAW_ARRAYS (index 105)
-(3) 0
+(6) NOW SLEEPING
+(0) call CMD_BIND_PIPELINE (index 1)
+(0) INTERRUPT
+(1) call CMD_BIND_PIPELINE (index 1)
+(0) WAKEUP
+(1) INTERRUPT
+(2) call CMD_BIND_PIPELINE (index 1)
+(1) WAKEUP
+(2) INTERRUPT
+(3) call CMD_BIND_PIPELINE (index 1)
+(2) WAKEUP
+(3) INTERRUPT
+(0) CMD_BIND_PIPELINE (index 1)
+(3) WAKEUP
+(1) CMD_BIND_PIPELINE (index 1)
+(2) CMD_BIND_PIPELINE (index 1)
+(3) CMD_BIND_PIPELINE (index 1)
+(4) call CMD_BIND_PIPELINE (index 1)
 (3) NOW SLEEPING
-(4) WAKEUP
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 104)
-(3) State 1
-(4) 1
-(4) call CMD_DRAW_ARRAYS (index 106)
-(4) call CMD_DRAW_ARRAYS (index 107)
-(4) call CMD_DRAW_ARRAYS (index 108)
-(4) CMD_DRAW_ARRAYS (index 105)
-(4) call CMD_DRAW_ARRAYS (index 109)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 106)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 107)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 108)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 109)
-(4) 0
-(4) NOW SLEEPING
+(0) NOW SLEEPING
+(1) NOW SLEEPING
 (4) INTERRUPT
-(4) rrupt State 6
-(4) State 1
-(4) call CMD_DRAW_ARRAYS (index 110)
-(5) call CMD_DRAW_ARRAYS (index 101)
+(2) NOW SLEEPING
+(5) call CMD_BIND_PIPELINE (index 1)
+(4) WAKEUP
 (5) INTERRUPT
-(5) rrupt State 6
-(5) call CMD_DRAW_ARRAYS (index 102)
-(5) call CMD_DRAW_ARRAYS (index 103)
-(5) call CMD_DRAW_ARRAYS (index 104)
-(5) call CMD_DRAW_ARRAYS (index 105)
-(4) WAKEUP
+(4) CMD_BIND_PIPELINE (index 1)
 (5) WAKEUP
-(5) 1
-(5) call CMD_DRAW_ARRAYS (index 106)
-(5) call CMD_DRAW_ARRAYS (index 107)
-(5) call CMD_DRAW_ARRAYS (index 108)
-(5) call CMD_DRAW_ARRAYS (index 109)
-(5) CMD_DRAW_ARRAYS (index 101)
-(4) 1
-(5) 1
-(4) CMD_DRAW_ARRAYS (index 110)
-(5) call CMD_DRAW_ARRAYS (index 110)
-(4) 0
+(6) call CMD_BIND_PIPELINE (index 1)
+(5) CMD_BIND_PIPELINE (index 1)
 (4) NOW SLEEPING
-(4) State 1
-(5) CMD_DRAW_ARRAYS (index 102)
-(6) call CMD_DRAW_ARRAYS (index 101)
-(6) INTERRUPT
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 103)
-(6) rrupt State 6
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 104)
-(6) call CMD_DRAW_ARRAYS (index 102)
-(6) call CMD_DRAW_ARRAYS (index 103)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 105)
-(6) call CMD_DRAW_ARRAYS (index 104)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 106)
-(6) WAKEUP
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 107)
-(6) call CMD_DRAW_ARRAYS (index 105)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 108)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 101)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 109)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 102)
-(5) 1
-(6) 1
-(5) CMD_DRAW_ARRAYS (index 110)
-(6) CMD_DRAW_ARRAYS (index 103)
-(5) 0
 (5) NOW SLEEPING
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 104)
-(5) State 1
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 105)
-(6) 0
-(6) NOW SLEEPING
 (6) INTERRUPT
-(6) rrupt State 6
-(6) State 1
-(6) call CMD_DRAW_ARRAYS (index 106)
 (6) WAKEUP
-(6) call CMD_DRAW_ARRAYS (index 107)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 106)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 107)
-(6) 0
-(6) NOW SLEEPING
-(6) INTERRUPT
-(6) rrupt State 6
-(6) State 1
-(6) call CMD_DRAW_ARRAYS (index 108)
-(6) call CMD_DRAW_ARRAYS (index 109)
-(6) WAKEUP
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 108)
-(6) call CMD_DRAW_ARRAYS (index 110)
-(7) call CMD_DRAW_ARRAYS (index 101)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 109)
-(7) INTERRUPT
-(7) rrupt State 6
-(7) call CMD_DRAW_ARRAYS (index 102)
-(7) call CMD_DRAW_ARRAYS (index 103)
-(7) call CMD_DRAW_ARRAYS (index 104)
-(7) call CMD_DRAW_ARRAYS (index 105)
-(6) 1
-(7) WAKEUP
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 101)
-(7) call CMD_DRAW_ARRAYS (index 106)
-(7) 1
-(6) CMD_DRAW_ARRAYS (index 110)
-(7) CMD_DRAW_ARRAYS (index 102)
-(6) 0
-(6) NOW SLEEPING
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 103)
-(6) State 1
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 104)
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 105)
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 106)
-(7) 0
-(7) NOW SLEEPING
-(7) INTERRUPT
-(7) rrupt State 6
-(7) State 1
-(7) call CMD_DRAW_ARRAYS (index 107)
-(7) call CMD_DRAW_ARRAYS (index 108)
-(7) call CMD_DRAW_ARRAYS (index 109)
-(7) call CMD_DRAW_ARRAYS (index 110)
-(0) call CMD_DRAW_ARRAYS (index 111)
-(7) WAKEUP
-(7) 1
+(6) CMD_BIND_PIPELINE (index 1)
+(0) call CMD_DRAW_ARRAYS (index 2)
 (0) INTERRUPT
-(0) rrupt State 6
-(7) CMD_DRAW_ARRAYS (index 107)
-(0) call CMD_DRAW_ARRAYS (index 112)
-(0) call CMD_DRAW_ARRAYS (index 113)
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 108)
+(6) NOW SLEEPING
 (0) WAKEUP
-(7) 1
-(0) call CMD_DRAW_ARRAYS (index 114)
-(0) 1
-(7) CMD_DRAW_ARRAYS (index 109)
-(0) CMD_DRAW_ARRAYS (index 111)
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 110)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 112)
-(7) 0
-(7) NOW SLEEPING
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 113)
-(7) State 1
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 114)
-(0) 0
-(0) NOW SLEEPING
-(0) INTERRUPT
-(0) rrupt State 6
-(0) State 1
-(0) call CMD_DRAW_ARRAYS (index 115)
-(0) call CMD_DRAW_ARRAYS (index 116)
-(0) call CMD_DRAW_ARRAYS (index 117)
-(0) WAKEUP
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 115)
-(0) call CMD_DRAW_ARRAYS (index 118)
-(0) 1
-(0) call CMD_DRAW_ARRAYS (index 119)
-(0) call CMD_DRAW_ARRAYS (index 120)
-(0) CMD_DRAW_ARRAYS (index 116)
-(1) call CMD_DRAW_ARRAYS (index 111)
+(0) call CMD_END_RECORD (index 3)
+(1) call CMD_END_RECORD (index 2)
+(0) CMD_DRAW_ARRAYS (index 2)
 (1) INTERRUPT
-(1) rrupt State 6
-(0) 1
-(1) call CMD_DRAW_ARRAYS (index 112)
-(0) CMD_DRAW_ARRAYS (index 117)
+(2) call CMD_END_RECORD (index 2)
 (1) WAKEUP
-(1) call CMD_DRAW_ARRAYS (index 113)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 118)
-(1) 0
-(1) NOW SLEEPING
-(1) INTERRUPT
-(1) rrupt State 6
-(0) 1
-(1) State 1
-(1) call CMD_DRAW_ARRAYS (index 114)
-(0) CMD_DRAW_ARRAYS (index 119)
-(1) call CMD_DRAW_ARRAYS (index 115)
-(1) WAKEUP
-(1) 0
-(1) NOW SLEEPING
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 120)
-(1) call CMD_DRAW_ARRAYS (index 116)
-(1) INTERRUPT
-(1) State 1
-(1) rrupt State 6
-(0) 0
-(0) NOW SLEEPING
-(0) State 1
-(1) WAKEUP
-(1) 0
-(1) NOW SLEEPING
-(1) State 1
-(1) call CMD_DRAW_ARRAYS (index 117)
-(1) INTERRUPT
-(1) rrupt State 6
-(1) call CMD_DRAW_ARRAYS (index 118)
-(1) call CMD_DRAW_ARRAYS (index 119)
-(1) call CMD_DRAW_ARRAYS (index 120)
-(2) call CMD_DRAW_ARRAYS (index 111)
 (2) INTERRUPT
-(1) WAKEUP
-(2) rrupt State 6
-(1) 0
-(1) NOW SLEEPING
-(1) State 1
+(3) call CMD_END_RECORD (index 2)
 (2) WAKEUP
-(2) call CMD_DRAW_ARRAYS (index 112)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 111)
-(2) call CMD_DRAW_ARRAYS (index 113)
-(2) call CMD_DRAW_ARRAYS (index 114)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 112)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 113)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 114)
-(2) 0
-(2) NOW SLEEPING
-(2) INTERRUPT
-(2) rrupt State 6
-(2) State 1
-(2) call CMD_DRAW_ARRAYS (index 115)
-(2) call CMD_DRAW_ARRAYS (index 116)
-(2) call CMD_DRAW_ARRAYS (index 117)
-(2) call CMD_DRAW_ARRAYS (index 118)
-(2) call CMD_DRAW_ARRAYS (index 119)
-(2) call CMD_DRAW_ARRAYS (index 120)
-(3) call CMD_DRAW_ARRAYS (index 111)
-(2) WAKEUP
-(2) 1
 (3) INTERRUPT
-(3) rrupt State 6
-(2) CMD_DRAW_ARRAYS (index 115)
-(3) call CMD_DRAW_ARRAYS (index 112)
-(3) call CMD_DRAW_ARRAYS (index 113)
+(4) call CMD_END_RECORD (index 2)
 (3) WAKEUP
-(2) 1
-(3) call CMD_DRAW_ARRAYS (index 114)
-(2) CMD_DRAW_ARRAYS (index 116)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 117)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 118)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 119)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 120)
-(2) 0
-(2) NOW SLEEPING
-(2) State 1
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 111)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 112)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 113)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 114)
-(3) 0
+(1) CMD_END_RECORD (index 2)
+(3) CMD_END_RECORD (index 2)
+(2) CMD_END_RECORD (index 2)
 (3) NOW SLEEPING
-(3) INTERRUPT
-(3) rrupt State 6
-(3) call CMD_DRAW_ARRAYS (index 115)
-(3) call CMD_DRAW_ARRAYS (index 116)
-(3) call CMD_DRAW_ARRAYS (index 117)
-(3) call CMD_DRAW_ARRAYS (index 118)
-(3) call CMD_DRAW_ARRAYS (index 119)
-(3) call CMD_DRAW_ARRAYS (index 120)
-(4) call CMD_DRAW_ARRAYS (index 111)
 (4) INTERRUPT
-(4) rrupt State 6
-(3) State 1
-(4) call CMD_DRAW_ARRAYS (index 112)
-(4) call CMD_DRAW_ARRAYS (index 113)
-(4) call CMD_DRAW_ARRAYS (index 114)
-(4) call CMD_DRAW_ARRAYS (index 115)
-(4) call CMD_DRAW_ARRAYS (index 116)
-(4) call CMD_DRAW_ARRAYS (index 117)
-(4) call CMD_DRAW_ARRAYS (index 118)
-(3) WAKEUP
-(3) 1
-(4) call CMD_DRAW_ARRAYS (index 119)
-(3) CMD_DRAW_ARRAYS (index 115)
-(4) WAKEUP
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 116)
-(4) call CMD_DRAW_ARRAYS (index 120)
-(3) 1
-(4) 1
-(3) CMD_DRAW_ARRAYS (index 117)
-(4) CMD_DRAW_ARRAYS (index 111)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 118)
-(4) 1
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 119)
-(4) CMD_DRAW_ARRAYS (index 112)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 120)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 113)
-(3) 0
-(3) NOW SLEEPING
-(3) State 1
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 114)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 115)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 116)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 117)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 118)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 119)
-(4) 1
-(4) CMD_DRAW_ARRAYS (index 120)
-(4) 0
-(4) NOW SLEEPING
-(4) INTERRUPT
-(4) rrupt State 6
-(4) State 1
-(5) call CMD_DRAW_ARRAYS (index 111)
-(4) WAKEUP
-(4) 0
-(4) NOW SLEEPING
-(4) State 1
-(5) INTERRUPT
-(5) rrupt State 6
-(5) call CMD_DRAW_ARRAYS (index 112)
-(5) call CMD_DRAW_ARRAYS (index 113)
-(5) call CMD_DRAW_ARRAYS (index 114)
-(5) call CMD_DRAW_ARRAYS (index 115)
-(5) call CMD_DRAW_ARRAYS (index 116)
-(5) call CMD_DRAW_ARRAYS (index 117)
-(5) WAKEUP
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 111)
-(5) call CMD_DRAW_ARRAYS (index 118)
-(5) call CMD_DRAW_ARRAYS (index 119)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 112)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 113)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 114)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 115)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 116)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 117)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 118)
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 119)
-(5) 0
-(5) NOW SLEEPING
-(5) INTERRUPT
-(5) rrupt State 6
-(5) State 1
-(5) call CMD_DRAW_ARRAYS (index 120)
-(5) WAKEUP
-(5) 1
-(5) CMD_DRAW_ARRAYS (index 120)
-(6) call CMD_DRAW_ARRAYS (index 111)
-(6) INTERRUPT
-(5) 0
-(6) rrupt State 6
-(5) NOW SLEEPING
-(6) call CMD_DRAW_ARRAYS (index 112)
-(6) call CMD_DRAW_ARRAYS (index 113)
-(6) WAKEUP
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 111)
-(5) State 1
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 112)
-(6) call CMD_DRAW_ARRAYS (index 114)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 113)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 114)
-(6) 0
-(6) NOW SLEEPING
-(6) State 1
-(6) INTERRUPT
-(6) rrupt State 6
-(6) call CMD_DRAW_ARRAYS (index 115)
-(6) call CMD_DRAW_ARRAYS (index 116)
-(6) call CMD_DRAW_ARRAYS (index 117)
-(6) call CMD_DRAW_ARRAYS (index 118)
-(6) call CMD_DRAW_ARRAYS (index 119)
-(6) call CMD_DRAW_ARRAYS (index 120)
-(6) WAKEUP
-(7) call CMD_DRAW_ARRAYS (index 111)
-(7) INTERRUPT
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 115)
-(7) rrupt State 6
-(7) call CMD_DRAW_ARRAYS (index 112)
-(7) call CMD_DRAW_ARRAYS (index 113)
-(7) call CMD_DRAW_ARRAYS (index 114)
-(7) call CMD_DRAW_ARRAYS (index 115)
-(7) call CMD_DRAW_ARRAYS (index 116)
-(7) call CMD_DRAW_ARRAYS (index 117)
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 116)
-(7) call CMD_DRAW_ARRAYS (index 118)
-(6) 1
-(7) call CMD_DRAW_ARRAYS (index 119)
-(7) call CMD_DRAW_ARRAYS (index 120)
-(0) call CMD_DRAW_ARRAYS (index 121)
-(0) INTERRUPT
-(0) rrupt State 6
-(6) CMD_DRAW_ARRAYS (index 117)
-(0) call CMD_DRAW_ARRAYS (index 122)
-(0) call CMD_DRAW_ARRAYS (index 123)
-(0) call CMD_DRAW_ARRAYS (index 124)
-(0) call CMD_DRAW_ARRAYS (index 125)
-(0) WAKEUP
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 121)
-(7) WAKEUP
-(0) 1
-(7) 1
-(0) call CMD_DRAW_ARRAYS (index 126)
-(6) 1
-(0) call CMD_DRAW_ARRAYS (index 127)
-(7) CMD_DRAW_ARRAYS (index 111)
-(0) call CMD_DRAW_ARRAYS (index 128)
-(0) call CMD_DRAW_ARRAYS (index 129)
-(7) 1
-(0) CMD_DRAW_ARRAYS (index 122)
-(7) CMD_DRAW_ARRAYS (index 112)
-(0) 1
-(0) call CMD_DRAW_ARRAYS (index 130)
-(6) CMD_DRAW_ARRAYS (index 118)
-(1) call CMD_DRAW_ARRAYS (index 121)
-(1) INTERRUPT
-(7) 1
-(0) CMD_DRAW_ARRAYS (index 123)
-(7) CMD_DRAW_ARRAYS (index 113)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 124)
-(1) rrupt State 6
-(0) 1
-(6) 1
-(6) CMD_DRAW_ARRAYS (index 119)
-(1) call CMD_DRAW_ARRAYS (index 122)
-(6) 1
-(0) CMD_DRAW_ARRAYS (index 125)
-(7) 1
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 126)
-(6) CMD_DRAW_ARRAYS (index 120)
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 127)
-(1) call CMD_DRAW_ARRAYS (index 123)
-(0) 1
-(1) call CMD_DRAW_ARRAYS (index 124)
-(1) WAKEUP
-(0) CMD_DRAW_ARRAYS (index 128)
-(1) call CMD_DRAW_ARRAYS (index 125)
-(0) 1
-(6) 0
-(6) NOW SLEEPING
-(7) CMD_DRAW_ARRAYS (index 114)
-(6) State 1
-(7) 1
-(0) CMD_DRAW_ARRAYS (index 129)
-(1) 0
-(0) 1
-(0) CMD_DRAW_ARRAYS (index 130)
-(7) CMD_DRAW_ARRAYS (index 115)
-(0) 0
+(2) NOW SLEEPING
+(0) CMD_END_RECORD (index 3)
 (1) NOW SLEEPING
-(1) INTERRUPT
-(1) rrupt State 6
 (0) NOW SLEEPING
-(0) State 1
-(1) call CMD_DRAW_ARRAYS (index 126)
-(1) call CMD_DRAW_ARRAYS (index 127)
-(1) call CMD_DRAW_ARRAYS (index 128)
-(1) State 1
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 116)
-(1) call CMD_DRAW_ARRAYS (index 129)
-(7) 1
-(1) call CMD_DRAW_ARRAYS (index 130)
-(2) call CMD_DRAW_ARRAYS (index 121)
-(2) INTERRUPT
-(1) WAKEUP
-(1) 0
-(1) NOW SLEEPING
-(2) rrupt State 6
-(7) CMD_DRAW_ARRAYS (index 117)
-(2) call CMD_DRAW_ARRAYS (index 122)
-(7) 1
-(1) State 1
-(2) WAKEUP
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 121)
-(7) CMD_DRAW_ARRAYS (index 118)
-(2) call CMD_DRAW_ARRAYS (index 123)
-(7) 1
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 122)
-(7) CMD_DRAW_ARRAYS (index 119)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 123)
-(7) 1
-(7) CMD_DRAW_ARRAYS (index 120)
-(2) 0
-(2) NOW SLEEPING
-(7) 0
-(7) NOW SLEEPING
-(7) State 1
-(2) INTERRUPT
-(2) rrupt State 6
-(2) State 1
-(2) call CMD_DRAW_ARRAYS (index 124)
-(2) call CMD_DRAW_ARRAYS (index 125)
-(2) call CMD_DRAW_ARRAYS (index 126)
-(2) call CMD_DRAW_ARRAYS (index 127)
-(2) call CMD_DRAW_ARRAYS (index 128)
-(2) call CMD_DRAW_ARRAYS (index 129)
-(2) call CMD_DRAW_ARRAYS (index 130)
-(3) call CMD_DRAW_ARRAYS (index 121)
-(3) INTERRUPT
-(2) WAKEUP
-(2) 1
-(3) rrupt State 6
-(2) CMD_DRAW_ARRAYS (index 124)
-(3) call CMD_DRAW_ARRAYS (index 122)
-(3) WAKEUP
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 121)
-(3) call CMD_DRAW_ARRAYS (index 123)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 122)
-(2) 1
-(3) 1
-(2) CMD_DRAW_ARRAYS (index 125)
-(3) call CMD_DRAW_ARRAYS (index 124)
-(3) call CMD_DRAW_ARRAYS (index 125)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 126)
-(3) CMD_DRAW_ARRAYS (index 123)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 127)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 124)
-(3) call CMD_DRAW_ARRAYS (index 126)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 125)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 128)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 126)
-(2) 1
-(2) CMD_DRAW_ARRAYS (index 129)
-(3) 0
-(2) 1
-(3) NOW SLEEPING
-(3) INTERRUPT
-(3) rrupt State 6
-(3) call CMD_DRAW_ARRAYS (index 127)
-(3) call CMD_DRAW_ARRAYS (index 128)
-(2) CMD_DRAW_ARRAYS (index 130)
-(3) call CMD_DRAW_ARRAYS (index 129)
-(2) 0
-(3) call CMD_DRAW_ARRAYS (index 130)
-(3) State 1
-(2) NOW SLEEPING
-(2) State 1
-(3) WAKEUP
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 127)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 128)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 129)
-(3) 1
-(3) CMD_DRAW_ARRAYS (index 130)
-(3) 0
-(3) NOW SLEEPING
-(0) call CMD_END_RECORD (index 131)
-(0) INTERRUPT
-(0) rrupt State 6
-(3) State 1
-(1) call CMD_END_RECORD (index 131)
-(1) INTERRUPT
-(1) rrupt State 6
-(2) call CMD_END_RECORD (index 131)
-(2) INTERRUPT
-(2) rrupt State 6
-(0) WAKEUP
-(0) 4
-(2) WAKEUP
-(3) call CMD_END_RECORD (index 131)
-(3) INTERRUPT
-(2) 4
-(3) rrupt State 6
-(1) WAKEUP
-(4) call CMD_END_RECORD (index 121)
-(3) WAKEUP
-(3) 4
-(1) 0
-(4) INTERRUPT
-(1) NOW SLEEPING
-(4) rrupt State 6
-(0) CMD_END_RECORD (index 131)
-(1) State 1
-(2) CMD_END_RECORD (index 131)
-(5) call CMD_END_RECORD (index 121)
-(2) NOW SLEEPING
-(2) State 1
 (4) WAKEUP
-(4) 4
-(4) CMD_END_RECORD (index 121)
-(4) NOW SLEEPING
-(4) State 1
-(0) NOW SLEEPING
-(0) State 1
+(5) call CMD_END_RECORD (index 2)
+(4) CMD_END_RECORD (index 2)
 (5) INTERRUPT
-(5) rrupt State 6
-(6) call CMD_END_RECORD (index 121)
+(4) NOW SLEEPING
+(6) call CMD_END_RECORD (index 2)
 (6) INTERRUPT
-(6) rrupt State 6
 (5) WAKEUP
-(5) 4
-(5) CMD_END_RECORD (index 121)
 (6) WAKEUP
+(5) CMD_END_RECORD (index 2)
+(6) CMD_END_RECORD (index 2)
 (5) NOW SLEEPING
-(5) State 1
-(7) call CMD_END_RECORD (index 121)
-(7) INTERRUPT
-(6) 4
-(6) CMD_END_RECORD (index 121)
-(3) CMD_END_RECORD (index 131)
 (6) NOW SLEEPING
+(0) call begin record
+(0) INTERRUPT
+(1) call begin record
+(1) INTERRUPT
+(0) WAKEUP
+(2) call begin record
+(1) WAKEUP
+(0) CMD_BEGIN_RECORD
+(1) CMD_BEGIN_RECORD
+(2) INTERRUPT
+(3) call begin record
+(2) WAKEUP
+(3) INTERRUPT
+(1) NOW SLEEPING
+(4) call begin record
+(2) CMD_BEGIN_RECORD
+(0) NOW SLEEPING
+(4) INTERRUPT
+(3) WAKEUP
+(5) call begin record
+(3) CMD_BEGIN_RECORD
+(4) WAKEUP
+(2) NOW SLEEPING
+(4) CMD_BEGIN_RECORD
+(5) INTERRUPT
 (3) NOW SLEEPING
-(7) rrupt State 6
-(3) State 1
-(6) State 1
-(7) WAKEUP
-(7) 4
-(7) CMD_END_RECORD (index 121)
-(7) NOW SLEEPING
-(7) State 1
-(1) BUG WARNING  looplock'd waiting for a thread that won't respond (state 1)
+(6) call begin record
+(4) NOW SLEEPING
+(5) WAKEUP
+(6) INTERRUPT
+(5) CMD_BEGIN_RECORD
+(0) call CMD_DRAW_ARRAYS (index 5)
+(6) WAKEUP
+(0) INTERRUPT
+(6) CMD_BEGIN_RECORD
+(0) call CMD_END_RECORD (index 6)
+(0) WAKEUP
+(5) NOW SLEEPING
+(1) call CMD_END_RECORD (index 4)
+(6) NOW SLEEPING
+(0) CMD_DRAW_ARRAYS (index 5)
+(1) INTERRUPT
+(2) call CMD_END_RECORD (index 4)
+(1) WAKEUP
+(2) INTERRUPT
+(1) CMD_END_RECORD (index 4)
+(3) call CMD_END_RECORD (index 4)
+(1) NOW SLEEPING
+(2) WAKEUP
+(3) INTERRUPT
+(2) CMD_END_RECORD (index 4)
+(3) WAKEUP
+(4) call CMD_END_RECORD (index 4)
+(3) CMD_END_RECORD (index 4)
+(2) NOW SLEEPING
+(3) NOW SLEEPING
+(4) INTERRUPT
+(5) call CMD_END_RECORD (index 4)
+(4) WAKEUP
+(5) INTERRUPT
+(4) CMD_END_RECORD (index 4)
+(6) call CMD_END_RECORD (index 4)
+(5) WAKEUP
+(4) NOW SLEEPING
+(5) CMD_END_RECORD (index 4)
+(6) INTERRUPT
+(5) NOW SLEEPING
+(6) WAKEUP
+(6) CMD_END_RECORD (index 4)
+(6) NOW SLEEPING
+Validation layer: Vali

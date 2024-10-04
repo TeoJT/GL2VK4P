@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import org.joml.Vector2f;
 import org.joml.Vector2fc;
@@ -93,7 +93,7 @@ public class GLExample {
 
 		}
 		catch (Exception e) {
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 			System.exit(1);
 		}
     	gl.close();
@@ -103,7 +103,7 @@ public class GLExample {
 	
 	
 	public void triangles() {
-		vertices = new Vertex[10];
+		vertices = new Vertex[1000];
     	createVertices(vertices);
     	
     	// Gen buffers
@@ -111,11 +111,40 @@ public class GLExample {
     	gl.glGenBuffers(1, out);
     	int vertexBuffer = out.get(0);
     	
+    	// Create our gpu program
+    	int program = gl.glCreateProgram();
+    	int vertShader = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+    	int fragShader = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
     	
-
+    	// Shader source
+    	gl.glShaderSource(vertShader, Util.readFile("resources/shaders/shader.vert"));
+    	gl.glShaderSource(fragShader, Util.readFile("resources/shaders/shader.frag"));
+    	// Compile the shaders
+    	gl.glCompileShader(vertShader);
+    	gl.glCompileShader(fragShader);
+    	// Attach the shaders
+    	gl.glAttachShader(program, vertShader);
+    	gl.glAttachShader(program, fragShader);
+    	// Don't need em anymore
+    	gl.glDeleteShader(vertShader);
+    	gl.glDeleteShader(fragShader);
+    	
+    	gl.glLinkProgram(program);
+    	
+    	
+		
     	int size = vertices.length*Vertex.SIZEOF;
     	ByteBuffer buff = ByteBuffer.allocate(size);
 
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
+    	
+		// Setup up attribs
+		int position = gl.glGetAttribLocation(program, "inPosition");
+		int color = gl.glGetAttribLocation(program, "inColor");
+		gl.glVertexAttribPointer(position, 2*4, 0, false, 5*4, 0);
+		gl.glVertexAttribPointer(color, 3*4, 0, false, 5*4, 2*4);
+		
+		gl.useProgram(program);
     	
 
     	boolean multithreaded = false;
@@ -125,8 +154,7 @@ public class GLExample {
 
     		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
     		else gl.selectNode(0);
-
-    		gl.beginRecord();
+    		
 
         	// Buffer data
         	createVertices(vertices);
@@ -135,8 +163,7 @@ public class GLExample {
         	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
         	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
 
-        	
-
+    		gl.beginRecord();
     		gl.glDrawArrays(vertexBuffer, 0, vertices.length);
     		gl.endRecord();
     		

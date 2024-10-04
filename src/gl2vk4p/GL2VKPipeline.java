@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.VK_COLOR_COMPONENT_A_BIT;
@@ -55,7 +55,7 @@ import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 import org.lwjgl.vulkan.VkViewport;
 
-import helloVulkan.ShaderSPIRVUtils.SPIRV;
+import gl2vk4p.ShaderSPIRVUtils.SPIRV;
 
 
 // Buffer bindings in opengl look like this
@@ -109,7 +109,7 @@ public class GL2VKPipeline {
 	public SPIRV fragShaderSPIRV = null;
 
     private long pipelineLayout;
-    public long graphicsPipeline;
+    public long graphicsPipeline = -1;
     
 	public ShaderAttribInfo attribInfo = null;
 	
@@ -119,6 +119,9 @@ public class GL2VKPipeline {
 	
 	private int boundBinding = 0;
 	private int totalVertexAttribsBindings = 0;
+	
+	// TODO: replace with checking the hashState instead
+	public boolean initiated = false;
 	
 	
 	
@@ -289,10 +292,9 @@ public class GL2VKPipeline {
             }
 
             graphicsPipeline = pGraphicsPipeline.get(0);
+            
 
             // ===> RELEASE RESOURCES <===
-
-
             vertShaderSPIRV.free();
             fragShaderSPIRV.free();
             
@@ -301,6 +303,8 @@ public class GL2VKPipeline {
 
             vertShaderModule = -1;
             fragShaderModule = -1;
+
+            initiated = true;
         }
     }
     

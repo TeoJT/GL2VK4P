@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import java.nio.LongBuffer;
 

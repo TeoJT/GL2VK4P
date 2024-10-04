@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -440,6 +440,18 @@ public class VulkanSystem {
     	threadNodes[selectedNode].bufferData(srcBuffer, dstBuffer, size);
     }
     
+    public void nodeBindPipeline(long pipeline) {
+    	threadNodes[selectedNode].bindPipeline(pipeline);
+    }
+    
+    public void bindPipelineAllNodes(long pipeline) {
+    	// Bind pipeline in our primary buffer
+//    	vkCmdBindPipeline(currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    	// Bind pipeline in all secondary command bufers
+    	for (ThreadNode n : threadNodes) {
+        	n.bindPipeline(pipeline);
+    	}
+    }
     
     /////////////////////////////////////////////////
     /////////////////////////////////////////////////

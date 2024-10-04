@@ -1,12 +1,12 @@
-package helloVulkan;
+package gl2vk4p;
 
 import java.nio.IntBuffer;
 
-import helloVulkan.ShaderSPIRVUtils.SPIRV;
-import helloVulkan.ShaderSPIRVUtils.ShaderKind;
+import gl2vk4p.ShaderSPIRVUtils.SPIRV;
+import gl2vk4p.ShaderSPIRVUtils.ShaderKind;
 
 import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-import static helloVulkan.ShaderSPIRVUtils.compileShader;
+import static gl2vk4p.ShaderSPIRVUtils.compileShader;
 import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
 import java.nio.ByteBuffer;
@@ -86,6 +86,7 @@ public class GL2VK {
 	
 	private int boundBuffer = 0;
 	private int boundProgram = 0;
+	private boolean changeProgram = true;
 	
 	
 	
@@ -161,10 +162,34 @@ public class GL2VK {
 		buffers[boundBuffer].bufferData(data, size, dangerMode);
 	}
 	
+	private boolean checkAndPrepareProgram() {
+		if (boundProgram <= 0) {
+			warn("glDrawArrays: No program bound.");
+			return false;
+		}
+		if (programs[boundProgram] == null || programs[boundProgram].attribInfo == null) {
+			warn("glDrawArrays: program "+boundProgram+" doesn't exist or isn't set up properly");
+			return false;
+		}
+		
+		if (!programs[boundProgram].initiated) {
+			programs[boundProgram].createGraphicsPipeline();
+		}
+		
+		if (changeProgram) {
+			system.bindPipelineAllNodes(programs[boundProgram].graphicsPipeline);
+			changeProgram = false;
+		}
+		
+		return true;
+	}
+	
 	public void glDrawArrays(int mode, int first, int count) {
-		int stride = programs[boundProgram].attribInfo.bindingSize;
-		System.out.println("CHECK YOUR STRIDE: "+stride);
-		system.nodeDrawArrays(buffers[boundBuffer].bufferID, count*stride, 0);
+		if (checkAndPrepareProgram() == false) return;
+		
+//		int stride = programs[boundProgram].attribInfo.bindingSize;
+//		System.out.println("CHECK YOUR STRIDE: "+stride);
+		system.nodeDrawArrays(buffers[boundBuffer].bufferID, count, 0);
 	}
 	
 	// Probably not going to fully implement glEnableVertexAttribArray or glDisableVertexAttribArray
@@ -192,7 +217,7 @@ public class GL2VK {
 	
 	public int glCreateProgram() {
 		int ret = programIndex;
-		programs[programIndex++] = new GL2VKPipeline();
+		programs[programIndex++] = new GL2VKPipeline(system);
 		return ret;
 	}
 	
@@ -347,6 +372,12 @@ public class GL2VK {
 		
 	}
 	
+	public void useProgram(int program) {
+		if (program != boundProgram) {
+			changeProgram = true;
+		}
+		boundProgram = program;
+	}
 	
 	
 	
@@ -364,6 +395,7 @@ public class GL2VK {
 	
 	public void beginRecord() {
 		system.beginRecord();
+		changeProgram = true;
 	}
 
 	public void endRecord() {

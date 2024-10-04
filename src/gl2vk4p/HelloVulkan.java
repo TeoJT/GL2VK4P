@@ -1,7 +1,7 @@
 /**
  * 
  */
-package helloVulkan;
+package gl2vk4p;
 
 
 
@@ -15,9 +15,6 @@ class HelloVulkan {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		System.out.println("Hello world!");
-		
-//		VulkanMain vk = new VulkanMain();
-//		vk.run();
 		
 		
 		GLExample gl = new GLExample();

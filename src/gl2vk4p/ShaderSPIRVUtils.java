@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import org.lwjgl.system.NativeResource;
 
@@ -82,7 +82,7 @@ public class ShaderSPIRVUtils {
         long result = shaderc_compile_into_spv(compiler, source, shaderKind.kind, "shader", "main", NULL);
 
         if(result == NULL) {
-            throw new RuntimeException("(No error information found)");
+            throw new RuntimeException("No error information provided by compiler");
         }
 
         if(shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success) {

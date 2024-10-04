@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import static java.util.stream.Collectors.toSet;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;

@@ -1,17 +1,13 @@
-package helloVulkan;
+package gl2vk4p;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.*;
 
 import java.nio.IntBuffer;
 
 import org.junit.jupiter.api.Test;
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDescription;
-
-import helloVulkan.VertexAttribsBinding;
 
 class VertexAttribPointerTests {
 
@@ -228,6 +224,20 @@ void main() {
 }
 		""";
 
+String vertSource1_alt = """
+#version 450
+
+layout(location = 2) in vec2 inPosition;
+layout(location = 3) in vec3 inColor;
+
+layout(location = 0) out vec3 fragColor;
+
+void main() {
+    gl_Position = vec4(inPosition, 0.0, 1.0);
+    fragColor = inColor;
+}
+		""";
+
 String fragSource1 = """
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
@@ -270,6 +280,8 @@ void main() {
     outColor = vec4(fragColor, 1.0);
 }
 		""";
+
+
 
 	
 	// And now
@@ -933,6 +945,69 @@ void main() {
 		assertEquals(0, descriptions.get(0).binding());
 		assertEquals(1, descriptions.get(1).binding());
 		assertEquals(2, descriptions.get(2).binding());
+	}
+	
+
+	@Test
+	public void glprogram_multiple_shaders_same_attribs() {
+		GL2VK gl = new GL2VK(GL2VK.DEBUG_MODE);
+		int programX = gl.glCreateProgram();
+		int vertShaderX = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+		int fragShaderX = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
+		// Now Y
+		int programY = gl.glCreateProgram();
+		int vertShaderY = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+		int fragShaderY = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
+		
+		// Buffers
+		IntBuffer out = IntBuffer.allocate(2);
+    	gl.glGenBuffers(2, out);
+    	int buffer1 = out.get(0);
+    	int buffer2 = out.get(1);
+		
+    	// Pass source code
+		gl.glShaderSource(vertShaderX, vertSource1);
+		gl.glShaderSource(vertShaderY, vertSource1_alt);
+		gl.glShaderSource(fragShaderX, fragSource1);
+		gl.glShaderSource(fragShaderY, fragSource1);
+		
+		// Compile shaders X
+		gl.glCompileShader(vertShaderX);
+		gl.glCompileShader(vertShaderY);
+		gl.glCompileShader(fragShaderX);
+		gl.glCompileShader(fragShaderY);
+		
+		// attach to program X
+		gl.glAttachShader(programX, vertShaderX);
+		gl.glAttachShader(programX, fragShaderX);
+
+		// Vertex attribs X
+		int position1 = gl.glGetAttribLocation(programX, "inPosition");
+		int color1 = gl.glGetAttribLocation(programX, "inColor");
+		gl.glBindBuffer(0, buffer1);
+		gl.glVertexAttribPointer(position1, 2*4, 0, false, 5*4, 0);
+		gl.glVertexAttribPointer(color1, 3*4, 0, false, 5*4, 2*4);
+		
+		
+		gl.glAttachShader(programY, vertShaderY);
+		gl.glAttachShader(programY, fragShaderY);
+		int position2 = gl.glGetAttribLocation(programY, "inPosition");
+		int color2 = gl.glGetAttribLocation(programY, "inColor");
+		gl.glBindBuffer(0, buffer2);
+		gl.glVertexAttribPointer(position2, 2*4, 0, false, 5*4, 0);
+		gl.glVertexAttribPointer(color2, 3*4, 0, false, 5*4, 2*4);
+		
+		
+
+		// Test X
+		VkVertexInputAttributeDescription.Buffer descriptions = gl.getPipeline(programX).getAttributeDescriptions();
+
+		assertEquals(0, descriptions.get(0).location());
+		assertEquals(1, descriptions.get(1).location());
+		
+		descriptions = gl.getPipeline(programY).getAttributeDescriptions();
+		assertEquals(2, descriptions.get(0).location());
+		assertEquals(3, descriptions.get(1).location());
 	}
 	
 	// TODO: test using crazyAttribsCode.

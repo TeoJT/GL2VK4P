@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.VK_COMMAND_BUFFER_LEVEL_SECONDARY;
@@ -40,7 +40,7 @@ import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 public class ThreadNode {
 	final static boolean DEBUG = false;
 	
-	
+	// ThreadNode commands
 	public final static int NO_CMD = 0;
 	public final static int CMD_DRAW_ARRAYS = 1;
 	public final static int CMD_DRAW_INDEXED = 2;
@@ -48,7 +48,9 @@ public class ThreadNode {
 	public final static int CMD_END_RECORD = 4;
 	public final static int CMD_KILL = 5;
 	public final static int CMD_BUFFER_DATA = 6;
+	public final static int CMD_BIND_PIPELINE = 7;
 
+	// ThreadNode state statuses
 	public final static int STATE_INACTIVE = 0;
 	public final static int STATE_SLEEPING = 1;
 	public final static int STATE_RUNNING = 2;
@@ -216,6 +218,8 @@ public class ThreadNode {
 
         		  long sleepTime = 0L;
         		  long runTime = 0L;
+        		  
+        		  boolean pipelineBound = false;
 	        	  
 	        	  // Loop until receive KILL_THREAD cmd
 	        	  while (true) {
@@ -288,6 +292,7 @@ public class ThreadNode {
 	        			  	
 	        	            openCmdBuffer.set(true);
 //	        	            vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, system.graphicsPipeline);
+	        	            pipelineBound = false;
 	        	            break;
 	        		  case CMD_END_RECORD:
 	        			  	threadState.set(STATE_RUNNING);
@@ -313,6 +318,8 @@ public class ThreadNode {
 	        			  goToSleepMode = false;
 	        			  kill = true;
 	        			  break;
+	        			  
+	        		  // This goes pretty much unused.
 	        		  case CMD_BUFFER_DATA:
 	        			  threadState.set(STATE_RUNNING);
 	        			  println("CMD_BUFFER_DATA (index "+index+")");
@@ -320,6 +327,14 @@ public class ThreadNode {
 //	        			  vkCmdEndRenderPass(system.currentCommandBuffer);
 	        			  system.copyBufferFast(cmdbuffer, cmdLongArg1.get(index), cmdLongArg2.get(index), cmdIntArg1.get(index));
 //	        			  vkCmdBeginRenderPass(system.currentCommandBuffer, system.renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+	        			  break;
+
+	        		  case CMD_BIND_PIPELINE:
+	        			  // Ensure we have a bound pipeline before anything
+	        			  
+	        			  threadState.set(STATE_RUNNING);
+	        			  println("CMD_BIND_PIPELINE (index "+index+")");
+	        	          vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdLongArg1.get(index));
 	        			  break;
 	        		  }
 	        		  
@@ -341,7 +356,6 @@ public class ThreadNode {
 	        				  // Sleep for an indefinite amount of time
 	        				  // (we gonna interrupt the thread later)
 	        				  threadState.set(STATE_SLEEPING);
-	        				  println("State "+threadState.get());
 	        				  Thread.sleep(999999);
 	        			  }
 	        			  catch (InterruptedException e) {
@@ -409,7 +423,6 @@ public class ThreadNode {
 			println("INTERRUPT");
 
 			threadState.set(STATE_SLEEPING_INTERRUPTED);
-			  println("rrupt State "+threadState.get());
 			thread.interrupt();
 		}
 		if (threadState.get() == STATE_SLEEPING) {
@@ -421,7 +434,6 @@ public class ThreadNode {
 			// to go back to sleep, it immediately wakes up because those interrupts are still in
 			// the queue. We tell it "it's been interrupted once, don't bother it any further."
 			threadState.set(STATE_SLEEPING_INTERRUPTED);
-			  println("rrupt State "+threadState.get());
 			thread.interrupt();
 		}
 		
@@ -456,6 +468,14 @@ public class ThreadNode {
         // our thread may begin executing drawArrays without all the commands
         // being properly set.
         cmdID.set(index, CMD_BUFFER_DATA);
+        wakeThread(index);
+    }
+    
+    public void bindPipeline(long pipeline) {
+        int index = getNextCMDIndex();
+		println("call CMD_BIND_PIPELINE (index "+index+")");
+		cmdLongArg1.set(index, pipeline);
+        cmdID.set(index, CMD_BIND_PIPELINE);
         wakeThread(index);
     }
 

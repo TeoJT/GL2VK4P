@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import static org.lwjgl.glfw.GLFW.GLFW_CLIENT_API;
 import static org.lwjgl.glfw.GLFW.GLFW_NO_API;

@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32A32_SFLOAT;
 import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32A32_SINT;

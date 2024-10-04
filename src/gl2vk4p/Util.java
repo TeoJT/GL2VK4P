@@ -1,5 +1,9 @@
-package helloVulkan;
+package gl2vk4p;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 
@@ -35,6 +39,19 @@ public class Util {
         return Math.max(min, Math.min(max, value));
     }
 
+    
+    public static String readFile(String relativepath) {
+    	File f = new File(".");
+    	String path = f.getAbsolutePath().replaceAll("\\\\", "/");
+    	path = path.substring(0, path.length()-1);
+    	try {
+			return new String(Files.readAllBytes(Paths.get(path+relativepath)));
+		} catch (IOException e) {
+			System.err.println("ERROR IOException "+e.getMessage());
+			return "";
+		}
+    }
+    
     
 	// Lil debugging tools here
 	long tmrnbefore = 0L;

@@ -1,4 +1,4 @@
-package helloVulkan;
+package gl2vk4p;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_TRANSFER_DST_BIT;
