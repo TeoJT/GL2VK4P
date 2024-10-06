@@ -9,6 +9,7 @@ import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 import static gl2vk4p.ShaderSPIRVUtils.compileShader;
 import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
+
 import java.nio.ByteBuffer;
 
 public class GL2VK {
@@ -21,6 +22,10 @@ public class GL2VK {
 	
 	public static final int GL_COMPILE_STATUS = 1;
 	public static final int GL_INFO_LOG_LENGTH = 2;
+	
+	public static final int GL_UNSIGNED_BYTE = 1;
+	public static final int GL_UNSIGNED_SHORT = 2;
+	public static final int GL_UNSIGNED_INT = 3;
 	
 	public static final int GL_TRUE = 1;
 	public static final int GL_FALSE = 0;
@@ -87,7 +92,6 @@ public class GL2VK {
 	private int boundBuffer = 0;
 	private int boundProgram = 0;
 	private boolean changeProgram = true;
-	private boolean recording = false;
 	
 	
 	
@@ -193,15 +197,21 @@ public class GL2VK {
 		
 //		int stride = programs[boundProgram].attribInfo.bindingSize;
 //		System.out.println("CHECK YOUR STRIDE: "+stride);
-		system.nodeDrawArrays(programs[boundProgram].getVKBuffers(), count, 0);
+//		for (Long val : programs[boundProgram].getVKBuffers()) {
+//			System.out.println(val);
+//		}
+		system.nodeDrawArrays(programs[boundProgram].getVKBuffers(), count, first);
 	}
 	
 	
+	// In normal openGL, the offset argument is instead a pointer to the indicies, but
+	// in jogl it's the bound buffer??
+	// Either way, it's java and Processing we're writing this for, so it is what it is.
 	public void glDrawElements(int mode, int count, int type, int offset) {
 		// Mode not used
 		if (checkAndPrepareProgram() == false) return;
 		
-		// TODO: implement
+		system.nodeDrawIndexed(count, buffers[boundBuffer].bufferID, programs[boundProgram].getVKBuffers(), offset, type);
 	}
 	
 	

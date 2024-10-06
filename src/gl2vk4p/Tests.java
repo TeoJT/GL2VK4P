@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 
-class VertexAttribPointerTests {
+class Tests {
 
 	String code1 = 
 			"""

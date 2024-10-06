@@ -11,6 +11,10 @@ import static org.lwjgl.vulkan.VK10.VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFER
 import static org.lwjgl.vulkan.VK10.VK_SUCCESS;
 import static org.lwjgl.vulkan.VK10.VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+import static org.lwjgl.vulkan.VK10.VK_INDEX_TYPE_UINT16;
+import static org.lwjgl.vulkan.VK10.VK_INDEX_TYPE_UINT32;
+import static org.lwjgl.vulkan.VkPhysicalDeviceIndexTypeUint8FeaturesKHR.INDEXTYPEUINT8;
+import static org.lwjgl.vulkan.VK10.vkCmdBindIndexBuffer;
 import static org.lwjgl.vulkan.VK10.vkAllocateCommandBuffers;
 import static org.lwjgl.vulkan.VK10.vkBeginCommandBuffer;
 import static org.lwjgl.vulkan.VK10.vkCmdBeginRenderPass;
@@ -262,24 +266,31 @@ public class ThreadNode {
 	        			  goToSleepMode = true;
 	        			  myIndex--;
 	        			  break;
-	        		  case CMD_DRAW_ARRAYS:
+	        		  case CMD_DRAW_ARRAYS: {
 	        			  // TODO: Similar to drawIndexed, pass a list of bound buffers
 	        			  // instead of the one interleaved list.
 	        			  
 	        			  threadState.set(STATE_RUNNING);
 	        			  println("CMD_DRAW_ARRAYS (index "+index+")");
-	        			  long id = cmdLongArgs[0].get(index);
 	        			  int size = cmdIntArgs[0].get(index);
 	        			  int first = cmdIntArgs[1].get(index);
+	        			  int numBuffers = cmdIntArgs[2].get(index);
+	        			  
 	        			  try(MemoryStack stack = stackPush()) {
-	        			      LongBuffer vertexBuffers = stack.longs(id);
-	        			      LongBuffer offsets = stack.longs(0);
+	        			      LongBuffer vertexBuffers = stack.callocLong(numBuffers);
+	        			      LongBuffer offsets = stack.callocLong(numBuffers);
+	        			      
+	        			      // Longargs 1-x are buffers.
+	        			      for (int i = 0; i < numBuffers; i++) {
+	        			    	  vertexBuffers.put(i, cmdLongArgs[i].get(index));
+		        			      offsets.put(i, 0);
+	        			      }
 	        			      vkCmdBindVertexBuffers(cmdbuffer, 0, vertexBuffers, offsets);
 	        			
 	        			      vkCmdDraw(cmdbuffer, size, 1, first, 0);
 	        		      }
 	        			  break;
-	        			  
+	        		  }
 	        			  // Probably the most important command
 	        		  case CMD_BEGIN_RECORD:
 	        			  	threadState.set(STATE_RUNNING);
@@ -352,7 +363,7 @@ public class ThreadNode {
 	        	          vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdLongArgs[0].get(index));
 	        			  break;
 	        			  
-	        		  case CMD_DRAW_INDEXED:
+	        		  case CMD_DRAW_INDEXED: {
 	        			  // Int0: indiciesSize
 	        			  // Long0: indiciesBuffer
 	        			  // Int1: numBuffers
@@ -361,7 +372,32 @@ public class ThreadNode {
 	        			  
 	        			  int indiciesSize = cmdIntArgs[0].get(index);
 	        			  int numBuffers = cmdIntArgs[1].get(index);
-	        			  int offset = cmdIntArgs[2].get(index);
+	        			  int offsettype = cmdIntArgs[2].get(index);
+	        			  long indicesBuffer = cmdLongArgs[0].get(index);
+	        			  
+	        			  int offset = offsettype & 0x3FFFFFFF;
+	        			  int type   = offsettype & 0xC0000000;
+	        			  System.out.println("offset "+offset);
+	        			  System.out.println("type "+type);
+	        			  
+	        			  int vkType = 0;
+	        			  switch (type) {
+	        			  // Unsigned byte
+	        			  case 0x40000000:
+	        				  // TODO: Test this to see if vulkan accepts it.
+	        				  vkType = INDEXTYPEUINT8;
+	        				  break;
+	        			  
+	        		      // Unsigned int
+	        			  case 0x80000000:
+	        				  vkType = VK_INDEX_TYPE_UINT32;
+	        				  break;
+	        				  
+	        			  // Unsigned short
+	        			  case 0xC0000000:
+	        				  vkType = VK_INDEX_TYPE_UINT16;
+	        				  break;
+	        			  }
 	        			  
 	        			  try(MemoryStack stack = stackPush()) {
 	        			      LongBuffer vertexBuffers = stack.callocLong(numBuffers);
@@ -376,11 +412,13 @@ public class ThreadNode {
 	        			      offsets.rewind();
 	        			      
 	        			      vkCmdBindVertexBuffers(cmdbuffer, 0, vertexBuffers, offsets);
-
+	        			      
+	        			      vkCmdBindIndexBuffer(cmdbuffer, indicesBuffer, offset, vkType);
 	        			      vkCmdDrawIndexed(cmdbuffer, indiciesSize, 1, offset, 0, 0);
 	        			  }
 	        		      
 	        			  break;
+	        		  }
 	        		  }
 	        		  
 	        		  // ======================
@@ -514,6 +552,7 @@ public class ThreadNode {
         
 		setIntArg(0, index, size);
 		setIntArg(1, index, first);
+		setIntArg(2, index, buffers.size());
         // Remember, last thing we should set is cmdID, set it before and
         // our thread may begin executing drawArrays without all the commands
         // being properly set.
@@ -522,7 +561,7 @@ public class ThreadNode {
     }
     
     
-    public void drawIndexed(int indiciesSize, long indiciesBuffer, ArrayList<Long> vertexBuffers, int offset) {
+    public void drawIndexed(int indiciesSize, long indiciesBuffer, ArrayList<Long> vertexBuffers, int offset, int type) {
         int index = getNextCMDIndex();
 		println("call CMD_DRAW_INDEXED (index "+index+")");
         
@@ -530,11 +569,30 @@ public class ThreadNode {
 		  // Long0: indiciesBuffer
 		  // Int1: numBuffers
 		  // LongX: vertexBuffers
-		  // Int2: offset
+		  // Int2: offset/type (higher bits type, lower bits offset)
+		
         setIntArg(0, index, indiciesSize);
         setLongArg(0, index, indiciesBuffer);
         setIntArg(1, index, vertexBuffers.size());
-        setIntArg(2, index, offset);
+        
+        int offsettype = offset & 0x3FFFFFFF;
+        // Replace last 2 bits with type
+        
+        switch (type) {
+        case GL2VK.GL_UNSIGNED_BYTE:
+        	// 1
+        	offsettype &= 0x40000000;
+        	break;
+        case GL2VK.GL_UNSIGNED_INT:
+        	// 2
+        	offsettype &= 0x80000000;
+        	break;
+        case GL2VK.GL_UNSIGNED_SHORT:
+        	offsettype &= 0xC0000000;
+        	break;
+        }
+        
+        setIntArg(2, index, offsettype);
         
         for (int i = 0; i < vertexBuffers.size(); i++) {
         	setLongArg(i+1, index, vertexBuffers.get(i));

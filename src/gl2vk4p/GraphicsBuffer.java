@@ -24,11 +24,11 @@ import org.lwjgl.vulkan.VkBufferCopy;
 
 public class GraphicsBuffer {
 
-    private long bufferID = -1;
-    public long bufferMemoryID = -1;
+    public long bufferID = -1;
+    private long bufferMemoryID = -1;
     private boolean bufferAssigned = false;
     private int bufferSize = 0;
-    public long stagingBuffer = -1;
+    private long stagingBuffer = -1;
     private long stagingBufferMemory = -1;
     
     private VulkanSystem system;
@@ -48,7 +48,6 @@ public class GraphicsBuffer {
     // - There's no previous buffer
     // - Buffer size != new size.
     public void createBufferAuto(int size, int usage) {
-    	if (bufferSize != size) System.out.println("reisze buffer "+size);
     	if (!bufferAssigned || bufferSize != size) {
     		// Delete old buffers
     		destroy();
@@ -72,6 +71,7 @@ public class GraphicsBuffer {
     		// to get back from createbuffer method
             LongBuffer pBuffer = stack.mallocLong(1);
             LongBuffer pBufferMemory = stack.mallocLong(1);
+            
 
             // Actually create our buffer.
             vkbase.createBuffer(size,
@@ -142,7 +142,7 @@ public class GraphicsBuffer {
 	    		data.rewind();
 	    		
 	    		while (datato.hasRemaining()) {
-	    			datato.putFloat(data.getFloat());
+	    			datato.put(data.get());
 	    		}
 	    		datato.rewind();
 	    		

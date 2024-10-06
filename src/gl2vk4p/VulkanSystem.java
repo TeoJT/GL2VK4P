@@ -433,7 +433,6 @@ public class VulkanSystem {
     ////////////////
     
     public void nodeDrawArrays(ArrayList<Long> buffers, int size, int first) {
-//    	System.out.println(selectedNode);
     	threadNodes[selectedNode].drawArrays(buffers, size, first);
     }
     
@@ -443,6 +442,10 @@ public class VulkanSystem {
     
     public void nodeBindPipeline(long pipeline) {
     	threadNodes[selectedNode].bindPipeline(pipeline);
+    }
+    
+    public void nodeDrawIndexed(int indiciesSize, long indiciesBuffer, ArrayList<Long> vertexBuffers, int offset, int type) {
+    	threadNodes[selectedNode].drawIndexed(indiciesSize, indiciesBuffer, vertexBuffers, offset, type);
     }
     
 //    public void bindPipelineAllNodes(long pipeline) {

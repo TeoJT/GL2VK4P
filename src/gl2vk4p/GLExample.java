@@ -6,6 +6,7 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 
 public class GLExample {
@@ -46,6 +47,32 @@ public class GLExample {
     	// All we do is create a new bindingdescription whenever a new
     	// buffer is bound when vertexAttribPointer is called.
 	}
+	
+	public void run() {
+		try {
+			gl = new GL2VK();
+//			triangles();
+			trianglesSeparate();
+//			throttleTest();
+//			indices();
+
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+    	gl.close();
+	}
+	
+	
+	// Draw a square with indicies
+	public void indices() {
+		
+	}
+	
+	
+	
+
 
 
 	private Vertex[] vertices;
@@ -74,6 +101,7 @@ public class GLExample {
 	}
 
     private void memcpy(ByteBuffer buffer, Vertex[] vertices) {
+    	buffer.order(ByteOrder.LITTLE_ENDIAN);
         for(Vertex vertex : vertices) {
             buffer.putFloat(vertex.pos.x());
             buffer.putFloat(vertex.pos.y());
@@ -83,23 +111,25 @@ public class GLExample {
             buffer.putFloat(vertex.color.z());
         }
     }
-	
-	
-	public void run() {
-		try {
-			gl = new GL2VK();
-			triangles();
-//			throttleTest();
+    
+    
+    private void copyVertex(ByteBuffer buffer, Vertex[] vertices) {
+    	buffer.order(ByteOrder.LITTLE_ENDIAN);
+        for(Vertex vertex : vertices) {
+            buffer.putFloat(vertex.pos.x());
+            buffer.putFloat(vertex.pos.y());
+        }
+    }
+    
 
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-    	gl.close();
-	}
-	
-	
+    private void copyColor(ByteBuffer buffer, Vertex[] vertices) {
+    	buffer.order(ByteOrder.LITTLE_ENDIAN);
+        for(Vertex vertex : vertices) {
+            buffer.putFloat(vertex.color.x());
+            buffer.putFloat(vertex.color.y());
+            buffer.putFloat(vertex.color.z());
+        }
+    }
 	
 	
 	public void triangles() {
@@ -163,13 +193,100 @@ public class GLExample {
     		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
     		else gl.selectNode(0);
     		
-    		gl.glDrawArrays(vertexBuffer, 0, vertices.length);
+    		gl.glDrawArrays(0, 0, vertices.length);
     		gl.endRecord();
     		
     		frameWait();
     	}
     	gl.close();
 	}
+	
+	
+
+	public void trianglesSeparate() {
+		vertices = new Vertex[1000];
+    	createVertices(vertices);
+    	
+    	// Gen buffers
+    	IntBuffer out = IntBuffer.allocate(2);
+    	gl.glGenBuffers(2, out);
+    	int vertexBuffer = out.get(0);
+    	int colorBuffer = out.get(1);
+    	
+    	// Create our gpu program
+    	int program = gl.glCreateProgram();
+    	int vertShader = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+    	int fragShader = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
+    	
+    	// Shader source
+    	gl.glShaderSource(vertShader, Util.readFile("resources/shaders/shader.vert"));
+    	gl.glShaderSource(fragShader, Util.readFile("resources/shaders/shader.frag"));
+    	// Compile the shaders
+    	gl.glCompileShader(vertShader);
+    	gl.glCompileShader(fragShader);
+    	// Attach the shaders
+    	gl.glAttachShader(program, vertShader);
+    	gl.glAttachShader(program, fragShader);
+    	// Don't need em anymore
+    	gl.glDeleteShader(vertShader);
+    	gl.glDeleteShader(fragShader);
+    	
+    	gl.glLinkProgram(program);
+    	
+    	
+		
+    	ByteBuffer vertexBuff = ByteBuffer.allocate(2 * Float.BYTES * vertices.length);
+    	ByteBuffer colorBuff = ByteBuffer.allocate(3 * Float.BYTES * vertices.length);
+
+    	
+		// Setup up attribs
+		int position = gl.glGetAttribLocation(program, "inPosition");
+		int color = gl.glGetAttribLocation(program, "inColor");
+
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
+		gl.glVertexAttribPointer(position, 2*4, 0, false, 2*4, 0);
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, colorBuffer);
+		gl.glVertexAttribPointer(color, 3*4, 0, false, 3*4, 0);
+		
+		gl.useProgram(program);
+    	
+
+    	boolean multithreaded = false;
+    	int threadIndex = 0;
+    	
+    	while (!gl.shouldClose()) {
+        	// Buffer vertices
+        	createVertices(vertices);
+        	vertexBuff.rewind();
+        	copyVertex(vertexBuff, vertices);
+        	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, vertexBuffer);
+        	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, 2 * Float.BYTES * vertices.length, vertexBuff, 0);
+
+        	colorBuff.rewind();
+        	copyColor(colorBuff, vertices);
+        	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, colorBuffer);
+        	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, 3 * Float.BYTES * vertices.length, colorBuff, 0);
+//
+//        	vertexBuff.rewind();
+//        	
+//        	while (vertexBuff.hasRemaining()) {
+//        		System.out.println(vertexBuff.getFloat());
+//        	}
+
+    		gl.beginRecord();
+
+    		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
+    		else gl.selectNode(0);
+    		
+    		gl.glDrawArrays(0, 0, vertices.length);
+    		gl.endRecord();
+    		
+    		frameWait();
+    	}
+    	gl.close();
+	}
+	
+	
 	
 	private void frameWait() {
 		try {
