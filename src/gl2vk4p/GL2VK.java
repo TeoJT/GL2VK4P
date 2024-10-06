@@ -193,9 +193,7 @@ public class GL2VK {
 		
 //		int stride = programs[boundProgram].attribInfo.bindingSize;
 //		System.out.println("CHECK YOUR STRIDE: "+stride);
-		
-		// TODO: pass the buffers with enabled vertexAttribs instead of the one boundBuffer.
-		system.nodeDrawArrays(buffers[boundBuffer].bufferID, count, 0);
+		system.nodeDrawArrays(programs[boundProgram].getVKBuffers(), count, 0);
 	}
 	
 	
@@ -226,7 +224,7 @@ public class GL2VK {
 		// It's such a mess, I'm so sorry
 		int vkLocation = program.getVKAttribLocation(glindex);
 		
-		program.bind(boundBuffer, buffers[boundBuffer].bufferID);
+		program.bind(boundBuffer, buffers[boundBuffer]);
 		program.vertexAttribPointer(vkLocation, size, offset, stride);
 	}
 	

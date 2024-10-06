@@ -24,11 +24,11 @@ import org.lwjgl.vulkan.VkBufferCopy;
 
 public class GraphicsBuffer {
 
-    public long bufferID = -1;
+    private long bufferID = -1;
     public long bufferMemoryID = -1;
     private boolean bufferAssigned = false;
     private int bufferSize = 0;
-    private long stagingBuffer = -1;
+    public long stagingBuffer = -1;
     private long stagingBufferMemory = -1;
     
     private VulkanSystem system;
@@ -48,6 +48,7 @@ public class GraphicsBuffer {
     // - There's no previous buffer
     // - Buffer size != new size.
     public void createBufferAuto(int size, int usage) {
+    	if (bufferSize != size) System.out.println("reisze buffer "+size);
     	if (!bufferAssigned || bufferSize != size) {
     		// Delete old buffers
     		destroy();
@@ -59,6 +60,12 @@ public class GraphicsBuffer {
     
     // Creates a buffer without allocating any data
     public void createBuffer(int size, int usage) {
+    	// If in debug mode, just assign a dummy value
+    	if (system == null) {
+    		this.stagingBuffer = (long)(Math.random()*100000.);
+    		return;
+    	}
+    	
     	try(MemoryStack stack = stackPush()) {
 
     		// Not from anywhere, just alloc pointers we can use
@@ -97,6 +104,9 @@ public class GraphicsBuffer {
     }
     
     public void destroy() {
+    	// If debug mode enabled
+    	if (system == null) return;
+    	
     	if (bufferID != -1 && bufferMemoryID != -1) {
 	        vkDestroyBuffer(system.device, bufferID, null);
 	        vkFreeMemory(system.device, bufferMemoryID, null);
@@ -109,6 +119,9 @@ public class GraphicsBuffer {
     // Sends data straight to the gpu
     // TODO: version where memory is constantly unmapped
     public void bufferData(ByteBuffer data, int size, boolean nodeMode) {
+
+    	// If debug mode enabled
+    	if (system == null) return;
 
     	try(MemoryStack stack = stackPush()) {
 	    	

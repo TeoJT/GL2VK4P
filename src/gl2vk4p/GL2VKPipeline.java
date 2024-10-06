@@ -346,7 +346,7 @@ public class GL2VKPipeline {
     // Used when glBindBuffer is called, so that we know to create a new binding
     // for our vertexattribs vulkan pipeline. This should be called in glVertexAttribPointer
     // function.
-    public void bind(int glIndex, long vkBufferID) {
+    public void bind(int glIndex, GraphicsBuffer buffer) {
     	boundBinding = glIndex;
     	// Automatically allocate new binding and increate binding count by one.
     	if (!gl2vkBinding.containsKey(boundBinding)) {
@@ -356,7 +356,12 @@ public class GL2VKPipeline {
     	// Tell me a better way to do it though.
     	// Technically the actual buffer can change during the pipeline so
     	// allow that to be dyncamically updated.
-    	gl2vkBinding.get(glIndex).vkBuffer = vkBufferID;
+    	gl2vkBinding.get(glIndex).buffer = buffer;
+    }
+    
+    // This should only be used with debug mode
+    public void bind(int glIndex) {
+    	bind(glIndex, null);
     }
     
     // Create global variable so it can be cached and hence avoiding garbage collection
@@ -368,10 +373,10 @@ public class GL2VKPipeline {
     // We just naively add an item if the list isn't big enough
     public ArrayList<Long> getVKBuffers() {
     	for (VertexAttribsBinding binding : gl2vkBinding.values()) {
-    		while (binding.myBinding > bufferArray.size()) {
+    		while (binding.myBinding > bufferArray.size()-1) {
     			bufferArray.add(0L);
     		}
-    		bufferArray.set(binding.myBinding, binding.vkBuffer);
+    		bufferArray.set(binding.myBinding, binding.buffer.stagingBuffer);
     	}
     	
     	return bufferArray;

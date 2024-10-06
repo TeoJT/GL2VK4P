@@ -432,9 +432,9 @@ public class VulkanSystem {
     // NODE COMMANDS
     ////////////////
     
-    public void nodeDrawArrays(long id, int size, int first) {
+    public void nodeDrawArrays(ArrayList<Long> buffers, int size, int first) {
 //    	System.out.println(selectedNode);
-    	threadNodes[selectedNode].drawArrays(id, size, first);
+    	threadNodes[selectedNode].drawArrays(buffers, size, first);
     }
     
     public void nodeBufferData(long srcBuffer, long dstBuffer, int size) {

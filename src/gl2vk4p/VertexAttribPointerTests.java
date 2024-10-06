@@ -3,7 +3,9 @@ package gl2vk4p;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.lwjgl.vulkan.VK10.*;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
@@ -67,7 +69,7 @@ fragColor = inColor;
 
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1, 0);
+		pipeline.bind(1);
 		pipeline.vertexAttribPointer(0, 2*4, 0*4, 5*4);
 		pipeline.vertexAttribPointer(1, 3*4, 2*4, 5*4);
 		
@@ -78,9 +80,9 @@ fragColor = inColor;
 	private VkVertexInputAttributeDescription.Buffer getDescription2() {
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1, 0);
+		pipeline.bind(1);
 		pipeline.vertexAttribPointer(0, 2*4, 0*4, 5*4);
-		pipeline.bind(2, 0);
+		pipeline.bind(2);
 		pipeline.vertexAttribPointer(1, 3*4, 2*4, 5*4);
 		
 		return pipeline.getAttributeDescriptions();
@@ -89,7 +91,7 @@ fragColor = inColor;
 	private VkVertexInputAttributeDescription.Buffer getDescription3() {
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1, 0);
+		pipeline.bind(1);
 		pipeline.vertexAttribPointer(0);
 		pipeline.vertexAttribPointer(1);
 		
@@ -100,7 +102,7 @@ fragColor = inColor;
 
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1, 0);
+		pipeline.bind(1);
 		pipeline.vertexAttribPointer(0, 2*4, 0*4, 5*4);
 		pipeline.vertexAttribPointer(1, 3*4, 2*4, 5*4);
 		
@@ -111,9 +113,9 @@ fragColor = inColor;
 
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1, 0);
+		pipeline.bind(1);
 		pipeline.vertexAttribPointer(0, 2*4, 0*4, 5*4);
-		pipeline.bind(2, 0);
+		pipeline.bind(2);
 		pipeline.vertexAttribPointer(1, 3*4, 2*4, 5*4);
 		
 		return pipeline.getBindingDescriptions();
@@ -290,6 +292,8 @@ void main() {
 	int failShader = -1;
 	int vertShader1 = -1;
 	int fragShader1 = -1;
+	int testbuffer1 = -1;
+	int testbuffer2 = -1;
 	
 	private GL2VK glProgram1() {
 		return glProgram1(false);
@@ -303,8 +307,8 @@ void main() {
 		
 		IntBuffer out = IntBuffer.allocate(2);
     	gl.glGenBuffers(2, out);
-    	int buffer1 = out.get(0);
-    	int buffer2 = out.get(1);
+    	testbuffer1 = out.get(0);
+    	testbuffer2 = out.get(1);
 		
 		gl.glShaderSource(vertShader1, vertSource1);
 		gl.glShaderSource(fragShader1, fragSource1);
@@ -318,9 +322,16 @@ void main() {
 		int position = gl.glGetAttribLocation(glProgram1, "inPosition");
 		int color = gl.glGetAttribLocation(glProgram1, "inColor");
 		
-		gl.glBindBuffer(0, buffer1);
+		ByteBuffer data = ByteBuffer.allocate(10);
+		
+		gl.glBindBuffer(0, testbuffer1);
+		gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, 10, data, 0);
+		
 		gl.glVertexAttribPointer(position, 2*4, 0, false, 5*4, 0);
-		if (extraBinding) gl.glBindBuffer(0, buffer2);
+		if (extraBinding) {
+			gl.glBindBuffer(0, testbuffer2);
+			gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, 10, data, 0);
+		}
 		gl.glVertexAttribPointer(color, 3*4, 0, false, 5*4, 2*4);
 		
 		return gl;
@@ -1010,10 +1021,48 @@ void main() {
 		assertEquals(3, descriptions.get(1).location());
 	}
 	
+
+	@Test
+	public void multiple_buffers_1() {
+		GL2VK gl = glProgram1(true);
+		ArrayList<Long> bindings = gl.getPipeline(glProgram1).getVKBuffers();
+		System.out.println("Buffer 1 value: "+bindings.get(0));
+		System.out.println("Buffer 2 value: "+bindings.get(1));
+		assertNotEquals(-1, bindings.get(0));
+		assertNotEquals(-1, bindings.get(1));
+		assertNotEquals(0, bindings.get(0));
+		assertNotEquals(0, bindings.get(1));
+		assertEquals(2, bindings.size());
+	}
+
+	@Test
+	public void multiple_buffers_2() {
+		GL2VK gl = glProgram1(false);
+		ArrayList<Long> bindings = gl.getPipeline(glProgram1).getVKBuffers();
+		System.out.println("Buffer 1 value: "+bindings.get(0));
+		assertNotEquals(-1, bindings.get(0));
+		assertEquals(1, bindings.size());
+	}
+
+	@Test
+	public void multiple_buffers_change() {
+		GL2VK gl = glProgram1(false);
+		
+		ArrayList<Long> bindings1 = gl.getPipeline(glProgram1).getVKBuffers();
+		System.out.println("Buffer 1 value: "+bindings1.get(0));
+		long beforeBinding = bindings1.get(0);
+		assertNotEquals(-1, bindings1.get(0));
+		assertEquals(1, bindings1.size());
+		
+		// Change
+		gl.glBindBuffer(0, testbuffer1);
+		gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, 20, null, 0);
+		ArrayList<Long> bindings2 = gl.getPipeline(glProgram1).getVKBuffers();
+		assertNotEquals(beforeBinding, bindings2.get(0));
+	}
+	
 	// TODO: test using crazyAttribsCode.
 	
-	// TODO: test getVKBuffers
 	// TODO: test many bindings
-	// TODO: test that getVKBuffers returns a fully populated list
 	// with a glprogram with many bindings.
 }

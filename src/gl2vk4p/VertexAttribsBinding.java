@@ -62,7 +62,9 @@ import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 public class VertexAttribsBinding {
 	public int myBinding = 0;
 	private int bindingStride = 0;
-	public long vkBuffer = 0;
+	
+	// Need the whole buffer and not just the id because the id could change at any time.
+	public GraphicsBuffer buffer = null;
 	private ShaderAttribInfo attribInfo;
 	
 	private int stateHash = 0;
