@@ -52,9 +52,9 @@ public class GLExample {
 		try {
 			gl = new GL2VK();
 //			triangles();
-			trianglesSeparate();
+//			trianglesSeparate();
 //			throttleTest();
-//			indices();
+			indices();
 
 		}
 		catch (Exception e) {
@@ -67,13 +67,119 @@ public class GLExample {
 	
 	// Draw a square with indicies
 	public void indices() {
+
+		// Create the data
+    	ByteBuffer vertexBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 2);
+    	ByteBuffer colorBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 3);
+    	ByteBuffer indexBuffer = ByteBuffer.allocate(Short.BYTES * 6);
+    	vertexBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    	colorBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    	indexBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    	
+//        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+//        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+//        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+//        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+    	vertexBuffer.putFloat(-0.5f);
+    	vertexBuffer.putFloat(-0.5f);
+    	colorBuffer.putFloat(1f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(0f);
+
+    	vertexBuffer.putFloat(0.5f);
+    	vertexBuffer.putFloat(-0.5f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(1f);
+    	colorBuffer.putFloat(0f);
+
+    	vertexBuffer.putFloat(0.5f);
+    	vertexBuffer.putFloat(0.5f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(1f);
+
+    	vertexBuffer.putFloat(-0.5f);
+    	vertexBuffer.putFloat(0.5f);
+    	colorBuffer.putFloat(1f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(1f);
+    	
+    	indexBuffer.putShort((short)0);
+    	indexBuffer.putShort((short)1);
+    	indexBuffer.putShort((short)2);
+    	indexBuffer.putShort((short)2);
+    	indexBuffer.putShort((short)3);
+    	indexBuffer.putShort((short)0);
+    	
+    	vertexBuffer.rewind();
+    	colorBuffer.rewind();
+    	indexBuffer.rewind();
+    	
+    	// Gen buffers
+    	IntBuffer out = IntBuffer.allocate(3);
+    	gl.glGenBuffers(3, out);
+    	int glVertBuff = out.get(0);
+    	int glColBuff = out.get(1);
+    	int glIndexBuff = out.get(2);
+    	
+    	
+    	// Create our gpu program
+    	int program = gl.glCreateProgram();
+    	int vertShader = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+    	int fragShader = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
+    	
+    	// Shader source
+    	gl.glShaderSource(vertShader, Util.readFile("resources/shaders/shader.vert"));
+    	gl.glShaderSource(fragShader, Util.readFile("resources/shaders/shader.frag"));
+    	// Compile the shaders
+    	gl.glCompileShader(vertShader);
+    	gl.glCompileShader(fragShader);
+    	// Attach the shaders
+    	gl.glAttachShader(program, vertShader);
+    	gl.glAttachShader(program, fragShader);
+    	// Don't need em anymore
+    	gl.glDeleteShader(vertShader);
+    	gl.glDeleteShader(fragShader);
+    	
+    	gl.glLinkProgram(program);
+
+    	
+		// Setup up attribs
+		int position = gl.glGetAttribLocation(program, "inPosition");
+		int color = gl.glGetAttribLocation(program, "inColor");
 		
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, glVertBuff);
+    	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, vertexBuffer.capacity(), vertexBuffer, 0);
+		gl.glVertexAttribPointer(position, 2*4, 0, false, 2*4, 0);
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, glColBuff);
+    	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, colorBuffer.capacity(), colorBuffer, 0);
+		gl.glVertexAttribPointer(color, 3*4, 0, false, 3*4, 0);
+
+    	gl.glBindBuffer(GL2VK.GL_INDEX_BUFFER, glIndexBuff);
+    	gl.glBufferData(GL2VK.GL_INDEX_BUFFER, indexBuffer.capacity(), indexBuffer, 0);
+    	
+    	
+		
+		
+		gl.useProgram(program);
+		
+		boolean multithreaded = true;
+		int threadIndex = 0;
+
+    	while (!gl.shouldClose()) {
+    		gl.beginRecord();
+
+    		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
+    		else gl.selectNode(0);
+
+        	gl.glBindBuffer(GL2VK.GL_INDEX_BUFFER, glIndexBuff);
+    		gl.glDrawElements(0, 6, GL2VK.GL_UNSIGNED_SHORT, 0);
+    		gl.endRecord();
+    		
+    		frameWait();
+    	}
 	}
 	
-	
-	
-
-
 
 	private Vertex[] vertices;
 	

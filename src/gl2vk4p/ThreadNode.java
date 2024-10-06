@@ -377,8 +377,6 @@ public class ThreadNode {
 	        			  
 	        			  int offset = offsettype & 0x3FFFFFFF;
 	        			  int type   = offsettype & 0xC0000000;
-	        			  System.out.println("offset "+offset);
-	        			  System.out.println("type "+type);
 	        			  
 	        			  int vkType = 0;
 	        			  switch (type) {
@@ -575,7 +573,7 @@ public class ThreadNode {
         setLongArg(0, index, indiciesBuffer);
         setIntArg(1, index, vertexBuffers.size());
         
-        int offsettype = offset & 0x3FFFFFFF;
+        int offsettype = offset & 0x3FFFFFFF | 0xC0000000;
         // Replace last 2 bits with type
         
         switch (type) {
@@ -588,6 +586,7 @@ public class ThreadNode {
         	offsettype &= 0x80000000;
         	break;
         case GL2VK.GL_UNSIGNED_SHORT:
+        	// 3
         	offsettype &= 0xC0000000;
         	break;
         }
