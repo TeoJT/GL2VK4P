@@ -87,6 +87,7 @@ public class GL2VK {
 	private int boundBuffer = 0;
 	private int boundProgram = 0;
 	private boolean changeProgram = true;
+	private boolean recording = false;
 	
 	
 	
@@ -175,9 +176,11 @@ public class GL2VK {
 		if (!programs[boundProgram].initiated) {
 			programs[boundProgram].createGraphicsPipeline();
 		}
+		system.updateNodePipeline(programs[boundProgram].graphicsPipeline);
 		
 		if (changeProgram) {
-			system.bindPipelineAllNodes(programs[boundProgram].graphicsPipeline);
+//			system.bindPipelineAllNodes(programs[boundProgram].graphicsPipeline);
+			
 			changeProgram = false;
 		}
 		
@@ -185,12 +188,24 @@ public class GL2VK {
 	}
 	
 	public void glDrawArrays(int mode, int first, int count) {
+		// Mode not used
 		if (checkAndPrepareProgram() == false) return;
 		
 //		int stride = programs[boundProgram].attribInfo.bindingSize;
 //		System.out.println("CHECK YOUR STRIDE: "+stride);
+		
+		// TODO: pass the buffers with enabled vertexAttribs instead of the one boundBuffer.
 		system.nodeDrawArrays(buffers[boundBuffer].bufferID, count, 0);
 	}
+	
+	
+	public void glDrawElements(int mode, int count, int type, int offset) {
+		// Mode not used
+		if (checkAndPrepareProgram() == false) return;
+		
+		// TODO: implement
+	}
+	
 	
 	// Probably not going to fully implement glEnableVertexAttribArray or glDisableVertexAttribArray
 	// because chances are, when we use glVertexAttribPointer, we're being pretty clear that we do,
@@ -211,13 +226,19 @@ public class GL2VK {
 		// It's such a mess, I'm so sorry
 		int vkLocation = program.getVKAttribLocation(glindex);
 		
-		program.bind(boundBuffer);
+		program.bind(boundBuffer, buffers[boundBuffer].bufferID);
 		program.vertexAttribPointer(vkLocation, size, offset, stride);
 	}
 	
 	public int glCreateProgram() {
 		int ret = programIndex;
-		programs[programIndex++] = new GL2VKPipeline(system);
+		// Null if it's in debug mode.
+		if (system == null) {
+			programs[programIndex++] = new GL2VKPipeline();
+		}
+		else {
+			programs[programIndex++] = new GL2VKPipeline(system);
+		}
 		return ret;
 	}
 	

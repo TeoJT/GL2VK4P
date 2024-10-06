@@ -34,6 +34,7 @@ import static org.lwjgl.vulkan.VK10.vkDestroyShaderModule;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -284,7 +285,7 @@ public class GL2VKPipeline {
             pipelineInfo.subpass(0);
             pipelineInfo.basePipelineHandle(VK_NULL_HANDLE);
             pipelineInfo.basePipelineIndex(-1);
-
+            
             LongBuffer pGraphicsPipeline = stack.mallocLong(1);
 
             if(vkCreateGraphicsPipelines(vkbase.device, VK_NULL_HANDLE, pipelineInfo, null, pGraphicsPipeline) != VK_SUCCESS) {
@@ -345,7 +346,7 @@ public class GL2VKPipeline {
     // Used when glBindBuffer is called, so that we know to create a new binding
     // for our vertexattribs vulkan pipeline. This should be called in glVertexAttribPointer
     // function.
-    public void bind(int glIndex) {
+    public void bind(int glIndex, long vkBufferID) {
     	boundBinding = glIndex;
     	// Automatically allocate new binding and increate binding count by one.
     	if (!gl2vkBinding.containsKey(boundBinding)) {
@@ -353,6 +354,27 @@ public class GL2VKPipeline {
     	}
     	// It all flowssss. In a very complicated, spaghetti'd way.
     	// Tell me a better way to do it though.
+    	// Technically the actual buffer can change during the pipeline so
+    	// allow that to be dyncamically updated.
+    	gl2vkBinding.get(glIndex).vkBuffer = vkBufferID;
+    }
+    
+    // Create global variable so it can be cached and hence avoiding garbage collection
+    private ArrayList<Long> bufferArray = new ArrayList<Long>();
+    
+    // This is a pretty bad solution, but efficient.
+    // Loop through the list, making sure the position in the array
+    // aligns with the myBinding value in VertexAttribsBinding.
+    // We just naively add an item if the list isn't big enough
+    public ArrayList<Long> getVKBuffers() {
+    	for (VertexAttribsBinding binding : gl2vkBinding.values()) {
+    		while (binding.myBinding > bufferArray.size()) {
+    			bufferArray.add(0L);
+    		}
+    		bufferArray.set(binding.myBinding, binding.vkBuffer);
+    	}
+    	
+    	return bufferArray;
     }
     
     public void vertexAttribPointer(int vklocation, int size, int offset, int stride) {
@@ -369,10 +391,6 @@ public class GL2VKPipeline {
     public void vertexAttribPointer(int location) {
     	gl2vkBinding.get(boundBinding).vertexAttribPointer(location);
     }
-    
-
-
-    
     
     public int addAttribInfo(ShaderAttribInfo attribInfo, int startIndex) {
     	this.attribInfo = attribInfo;
@@ -396,7 +414,6 @@ public class GL2VKPipeline {
 
     public int getVKAttribLocation(int glAttribLocation) {
     	return GLLocationToVKLocation[glAttribLocation];
-    	
     }
     
     // Depricated but leave these in for the unit tests
@@ -405,10 +422,11 @@ public class GL2VKPipeline {
 	  attribInfo = new ShaderAttribInfo(source);
 	}
 
-  
 	public void compileFragment(String source) {
 //    	  fragShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.frag", FRAGMENT_SHADER);
 	}
+	
+	
 
 
 //  public int getAttribvkLocation(String name) {

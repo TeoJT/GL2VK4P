@@ -67,7 +67,7 @@ fragColor = inColor;
 
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1);
+		pipeline.bind(1, 0);
 		pipeline.vertexAttribPointer(0, 2*4, 0*4, 5*4);
 		pipeline.vertexAttribPointer(1, 3*4, 2*4, 5*4);
 		
@@ -78,9 +78,9 @@ fragColor = inColor;
 	private VkVertexInputAttributeDescription.Buffer getDescription2() {
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1);
+		pipeline.bind(1, 0);
 		pipeline.vertexAttribPointer(0, 2*4, 0*4, 5*4);
-		pipeline.bind(2);
+		pipeline.bind(2, 0);
 		pipeline.vertexAttribPointer(1, 3*4, 2*4, 5*4);
 		
 		return pipeline.getAttributeDescriptions();
@@ -89,7 +89,7 @@ fragColor = inColor;
 	private VkVertexInputAttributeDescription.Buffer getDescription3() {
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1);
+		pipeline.bind(1, 0);
 		pipeline.vertexAttribPointer(0);
 		pipeline.vertexAttribPointer(1);
 		
@@ -100,7 +100,7 @@ fragColor = inColor;
 
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1);
+		pipeline.bind(1, 0);
 		pipeline.vertexAttribPointer(0, 2*4, 0*4, 5*4);
 		pipeline.vertexAttribPointer(1, 3*4, 2*4, 5*4);
 		
@@ -111,9 +111,9 @@ fragColor = inColor;
 
 		GL2VKPipeline pipeline = new GL2VKPipeline();
 		pipeline.compileVertex(code1);
-		pipeline.bind(1);
+		pipeline.bind(1, 0);
 		pipeline.vertexAttribPointer(0, 2*4, 0*4, 5*4);
-		pipeline.bind(2);
+		pipeline.bind(2, 0);
 		pipeline.vertexAttribPointer(1, 3*4, 2*4, 5*4);
 		
 		return pipeline.getBindingDescriptions();
@@ -1011,4 +1011,9 @@ void main() {
 	}
 	
 	// TODO: test using crazyAttribsCode.
+	
+	// TODO: test getVKBuffers
+	// TODO: test many bindings
+	// TODO: test that getVKBuffers returns a fully populated list
+	// with a glprogram with many bindings.
 }

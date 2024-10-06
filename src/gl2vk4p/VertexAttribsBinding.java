@@ -1,15 +1,11 @@
 package gl2vk4p;
 
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32_SFLOAT;
-import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32_SFLOAT;
 import static org.lwjgl.vulkan.VK10.VK_VERTEX_INPUT_RATE_VERTEX;
 
-import java.util.HashMap;
+import java.util.HashSet;
 
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDescription;
-import static org.lwjgl.vulkan.VK10.*;
 
 
 // ABOUT BINDINGS:
@@ -64,16 +60,14 @@ import static org.lwjgl.vulkan.VK10.*;
 
 
 public class VertexAttribsBinding {
-	private int myBinding = 0;
+	public int myBinding = 0;
 	private int bindingStride = 0;
+	public long vkBuffer = 0;
 	private ShaderAttribInfo attribInfo;
 	
 	private int stateHash = 0;
 	
-	// use classic arrays instead of ArrayLists because we care about garbage
-	// collection overhead.
-	private int[] usedLocations = new int[512];
-	private int usedLocationsIndex = 0;
+	private HashSet<Integer> usedLocations = new HashSet<Integer>();
 	
 	public VertexAttribsBinding(int binding, ShaderAttribInfo attribInfo) {
 		this.myBinding = binding;
@@ -104,44 +98,34 @@ public class VertexAttribsBinding {
 		bindingStride = stride;
 		
 		// We're using those attribs
-		usedLocations[usedLocationsIndex++] = location;
+		usedLocations.add(location);
 		
 		// What's set by this function determines the state of the pipeline (if
 		// it changes at any point, we need to recreate the pipeline with new
 		// vertex bindings)
-		stateHash += (location+1L)*usedLocationsIndex*100L + size*2 + offset*3;
+		
+		// TODO: Remove this, move it to getStateHash() instead.
+		stateHash += (location+1L)*usedLocations.size()*100L + size*2 + offset*3;
 	}
 	
 	// Mostly used for testing purposes
 	public void vertexAttribPointer(int location) {
 		// We're using those attribs
-		usedLocations[usedLocationsIndex++] = location;
+		usedLocations.add(location);
 		
-		// What's set by this function determines the state of the pipeline (if
-		// it changes at any point, we need to recreate the pipeline with new
-		// vertex bindings)
-		stateHash += (location+1L)*usedLocationsIndex*100L + 
+		// TODO: Remove this, move it to getStateHash() instead.
+		stateHash += (location+1L)*usedLocations.size()*100L + 
 				attribInfo.locationToAttrib[location].size*2 + 
 				attribInfo.locationToAttrib[location].offset*3;
 	}
 	
+	// TODO: Calculate hash state on the spot instead of relying on possibly invalid states.
 	public int getHashState() {
 		return stateHash;
 	}
 	
-	// Because vertexAttribPointer is called every frame, we need to reset, just simply means
-	// that we re-record the statehash
-	public void reset() {
-		usedLocationsIndex = 0;
-		stateHash = 0;
-	}
-	
-
-	
 	public void updateAttributeDescriptions(VkVertexInputAttributeDescription.Buffer attribDescrptions, int index) {
-		for (int i = 0; i < usedLocationsIndex; i++) {
-			int loc = usedLocations[i];
-			
+		for (Integer loc : usedLocations) {
 			VkVertexInputAttributeDescription description = attribDescrptions.get(index++);
 			description.binding(myBinding);
 			description.location(loc);
@@ -151,7 +135,7 @@ public class VertexAttribsBinding {
 	}
 	
 	public int getSize() {
-		return usedLocationsIndex;
+		return usedLocations.size();
 	}
 	
 	public void updateBindingDescription(VkVertexInputBindingDescription bindingDescription) {

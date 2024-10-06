@@ -151,11 +151,6 @@ public class GLExample {
     	int threadIndex = 0;
     	
     	while (!gl.shouldClose()) {
-
-    		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
-    		else gl.selectNode(0);
-    		
-
         	// Buffer data
         	createVertices(vertices);
         	buff.rewind();
@@ -164,6 +159,10 @@ public class GLExample {
         	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, size, buff, 0);
 
     		gl.beginRecord();
+
+    		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
+    		else gl.selectNode(0);
+    		
     		gl.glDrawArrays(vertexBuffer, 0, vertices.length);
     		gl.endRecord();
     		

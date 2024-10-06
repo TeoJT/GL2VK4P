@@ -15,16 +15,20 @@ import static org.lwjgl.vulkan.VK10.vkAllocateCommandBuffers;
 import static org.lwjgl.vulkan.VK10.vkBeginCommandBuffer;
 import static org.lwjgl.vulkan.VK10.vkCmdBeginRenderPass;
 import static org.lwjgl.vulkan.VK10.vkCmdBindPipeline;
-import static org.lwjgl.vulkan.VK10.vkCmdEndRenderPass;
+import static org.lwjgl.vulkan.VK10.vkCmdBindVertexBuffers;
+import static org.lwjgl.vulkan.VK10.vkCmdDraw;
+import static org.lwjgl.vulkan.VK10.vkCmdDrawIndexed;
 import static org.lwjgl.vulkan.VK10.vkCreateCommandPool;
 import static org.lwjgl.vulkan.VK10.vkEndCommandBuffer;
 import static org.lwjgl.vulkan.VK10.vkResetCommandBuffer;
 
 
 import java.nio.LongBuffer;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import org.lwjgl.PointerBuffer;
@@ -79,7 +83,7 @@ public class ThreadNode {
 	// To avoid clashing from the main thread accessing the front of the queue while the
 	// other thread is accessing the end of the queue, best solution is to make this big
 	// enough lol.
-	private final static int MAX_QUEUE_LENGTH = 50000;
+	private final static int MAX_QUEUE_LENGTH = 1000;
 	
 	private VulkanSystem system;
 	private VKSetup vkbase;
@@ -121,10 +125,9 @@ public class ThreadNode {
 	// the one cmd class, which isn't the most readable or memory efficient,
 	// but we care about going FAST.
 	private AtomicIntegerArray cmdID = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicLongArray cmdLongArg1 = new AtomicLongArray(MAX_QUEUE_LENGTH);
-	private AtomicLongArray cmdLongArg2 = new AtomicLongArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdIntArg1 = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
-	private AtomicIntegerArray cmdIntArg2 = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
+	private AtomicLongArray[] cmdLongArgs = new AtomicLongArray[128];
+	private AtomicIntegerArray[] cmdIntArgs = new AtomicIntegerArray[128];
+	public long currentPipeline = 0L;
 	
 	
 
@@ -260,9 +263,21 @@ public class ThreadNode {
 	        			  myIndex--;
 	        			  break;
 	        		  case CMD_DRAW_ARRAYS:
+	        			  // TODO: Similar to drawIndexed, pass a list of bound buffers
+	        			  // instead of the one interleaved list.
+	        			  
 	        			  threadState.set(STATE_RUNNING);
 	        			  println("CMD_DRAW_ARRAYS (index "+index+")");
-	        			  system.drawArraysImpl(cmdbuffer, cmdLongArg1.get(index), cmdIntArg1.get(index), cmdIntArg2.get(index));
+	        			  long id = cmdLongArgs[0].get(index);
+	        			  int size = cmdIntArgs[0].get(index);
+	        			  int first = cmdIntArgs[1].get(index);
+	        			  try(MemoryStack stack = stackPush()) {
+	        			      LongBuffer vertexBuffers = stack.longs(id);
+	        			      LongBuffer offsets = stack.longs(0);
+	        			      vkCmdBindVertexBuffers(cmdbuffer, 0, vertexBuffers, offsets);
+	        			
+	        			      vkCmdDraw(cmdbuffer, size, 1, first, 0);
+	        		      }
 	        			  break;
 	        			  
 	        			  // Probably the most important command
@@ -272,8 +287,8 @@ public class ThreadNode {
 	        			  	runTime = 0;
 	        			  	println("CMD_BEGIN_RECORD");
 
-        			  		currentImage.set(cmdIntArg1.get(index));
-        			  		currentFrame.set(cmdIntArg2.get(index));
+        			  		currentImage.set(cmdIntArgs[0].get(index));
+        			  		currentFrame.set(cmdIntArgs[1].get(index));
         			  		cmdbuffer = cmdbuffers[currentFrame.get()];
 	        			  	
 	        			  	if (openCmdBuffer.get() == false) {
@@ -325,7 +340,7 @@ public class ThreadNode {
 	        			  println("CMD_BUFFER_DATA (index "+index+")");
 
 //	        			  vkCmdEndRenderPass(system.currentCommandBuffer);
-	        			  system.copyBufferFast(cmdbuffer, cmdLongArg1.get(index), cmdLongArg2.get(index), cmdIntArg1.get(index));
+	        			  system.copyBufferFast(cmdbuffer, cmdLongArgs[0].get(index), cmdLongArgs[1].get(index), cmdIntArgs[0].get(index));
 //	        			  vkCmdBeginRenderPass(system.currentCommandBuffer, system.renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 	        			  break;
 
@@ -334,7 +349,37 @@ public class ThreadNode {
 	        			  
 	        			  threadState.set(STATE_RUNNING);
 	        			  println("CMD_BIND_PIPELINE (index "+index+")");
-	        	          vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdLongArg1.get(index));
+	        	          vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdLongArgs[0].get(index));
+	        			  break;
+	        			  
+	        		  case CMD_DRAW_INDEXED:
+	        			  // Int0: indiciesSize
+	        			  // Long0: indiciesBuffer
+	        			  // Int1: numBuffers
+	        			  // LongX: vertexBuffers
+	        			  // Int2: offset
+	        			  
+	        			  int indiciesSize = cmdIntArgs[0].get(index);
+	        			  int numBuffers = cmdIntArgs[1].get(index);
+	        			  int offset = cmdIntArgs[2].get(index);
+	        			  
+	        			  try(MemoryStack stack = stackPush()) {
+	        			      LongBuffer vertexBuffers = stack.callocLong(numBuffers);
+	        			      LongBuffer offsets = stack.callocLong(numBuffers);
+	        			      
+	        			      // Longargs 1-x are buffers.
+	        			      for (int i = 0; i < numBuffers; i++) {
+	        			    	  vertexBuffers.put(i, cmdLongArgs[i+1].get(index));
+		        			      offsets.put(i, offset);
+	        			      }
+	        			      vertexBuffers.rewind();
+	        			      offsets.rewind();
+	        			      
+	        			      vkCmdBindVertexBuffers(cmdbuffer, 0, vertexBuffers, offsets);
+
+	        			      vkCmdDrawIndexed(cmdbuffer, indiciesSize, 1, offset, 0, 0);
+	        			  }
+	        		      
 	        			  break;
 	        		  }
 	        		  
@@ -386,6 +431,20 @@ public class ThreadNode {
 		}
 		cmdindex++;
 		return ret;
+	}
+	
+	private void setIntArg(int argIndex, int queueIndex, int value) {
+		if (cmdIntArgs[argIndex] == null) {
+			cmdIntArgs[argIndex] = new AtomicIntegerArray(MAX_QUEUE_LENGTH);
+		}
+		cmdIntArgs[argIndex].set(queueIndex, value);
+	}
+	
+	private void setLongArg(int argIndex, int queueIndex, long value) {
+		if (cmdLongArgs[argIndex] == null) {
+			cmdLongArgs[argIndex] = new AtomicLongArray(MAX_QUEUE_LENGTH);
+		}
+		cmdLongArgs[argIndex].set(queueIndex, value);
 	}
 	
 	
@@ -445,12 +504,16 @@ public class ThreadNode {
 	}
 
 
-    public void drawArrays(long id, int size, int first) {
+    public void drawArrays(ArrayList<Long> buffers, int size, int first) {
         int index = getNextCMDIndex();
 		println("call CMD_DRAW_ARRAYS (index "+index+")");
-		cmdLongArg1.set(index, id);
-        cmdIntArg1.set(index, size);
-        cmdIntArg2.set(index, first);
+
+        for (int i = 0; i < buffers.size(); i++) {
+        	setLongArg(i, index, buffers.get(i));
+        }
+        
+		setIntArg(0, index, size);
+		setIntArg(1, index, first);
         // Remember, last thing we should set is cmdID, set it before and
         // our thread may begin executing drawArrays without all the commands
         // being properly set.
@@ -459,11 +522,34 @@ public class ThreadNode {
     }
     
     
+    public void drawIndexed(int indiciesSize, long indiciesBuffer, ArrayList<Long> vertexBuffers, int offset) {
+        int index = getNextCMDIndex();
+		println("call CMD_DRAW_INDEXED (index "+index+")");
+        
+		  // Int0: indiciesSize
+		  // Long0: indiciesBuffer
+		  // Int1: numBuffers
+		  // LongX: vertexBuffers
+		  // Int2: offset
+        setIntArg(0, index, indiciesSize);
+        setLongArg(0, index, indiciesBuffer);
+        setIntArg(1, index, vertexBuffers.size());
+        setIntArg(2, index, offset);
+        
+        for (int i = 0; i < vertexBuffers.size(); i++) {
+        	setLongArg(i+1, index, vertexBuffers.get(i));
+        }
+
+        cmdID.set(index, CMD_DRAW_INDEXED);
+        wakeThread(index);
+    }
+    
+    
     public void bufferData(long srcBuffer, long dstBuffer, int size) {
         int index = getNextCMDIndex();
-		cmdLongArg1.set(index, srcBuffer);
-        cmdLongArg2.set(index, dstBuffer);
-        cmdIntArg1.set(index, size);
+        setLongArg(0, index, srcBuffer);
+        setLongArg(1, index, dstBuffer);
+        setIntArg(0, index, size);
         // Remember, last thing we should set is cmdID, set it before and
         // our thread may begin executing drawArrays without all the commands
         // being properly set.
@@ -472,19 +558,22 @@ public class ThreadNode {
     }
     
     public void bindPipeline(long pipeline) {
-        int index = getNextCMDIndex();
-		println("call CMD_BIND_PIPELINE (index "+index+")");
-		cmdLongArg1.set(index, pipeline);
-        cmdID.set(index, CMD_BIND_PIPELINE);
-        wakeThread(index);
+    	if (currentPipeline != pipeline) {
+	        int index = getNextCMDIndex();
+			println("call CMD_BIND_PIPELINE (index "+index+")");
+			currentPipeline = pipeline;
+			setLongArg(0, index, pipeline);
+	        cmdID.set(index, CMD_BIND_PIPELINE);
+	        wakeThread(index);
+    	}
     }
 
     
 	public void beginRecord(int currentFrame, int currentImage) {
 		println("call begin record");
         int index = getNextCMDIndex();
-        cmdIntArg1.set(index, currentImage);
-        cmdIntArg2.set(index, currentFrame);
+        setIntArg(0, index, currentImage);
+        setIntArg(1, index, currentFrame);
         cmdID.set(index, CMD_BEGIN_RECORD);
         
         wakeThread(index);
@@ -496,6 +585,7 @@ public class ThreadNode {
 		println("call CMD_END_RECORD (index "+index+")");
         // No arguments
         wakeThread(index);
+		currentPipeline = 0;
 	}
 
 	public void kill() {

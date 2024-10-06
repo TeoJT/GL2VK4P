@@ -431,6 +431,7 @@ public class VulkanSystem {
     ////////////////
     // NODE COMMANDS
     ////////////////
+    
     public void nodeDrawArrays(long id, int size, int first) {
 //    	System.out.println(selectedNode);
     	threadNodes[selectedNode].drawArrays(id, size, first);
@@ -444,37 +445,26 @@ public class VulkanSystem {
     	threadNodes[selectedNode].bindPipeline(pipeline);
     }
     
-    public void bindPipelineAllNodes(long pipeline) {
-    	// Bind pipeline in our primary buffer
-//    	vkCmdBindPipeline(currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    	// Bind pipeline in all secondary command bufers
-    	for (ThreadNode n : threadNodes) {
-        	n.bindPipeline(pipeline);
-    	}
-    }
+//    public void bindPipelineAllNodes(long pipeline) {
+//    	// Bind pipeline in our primary buffer
+////    	vkCmdBindPipeline(currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+//    	// Bind pipeline in all secondary command bufers
+//    	for (ThreadNode n : threadNodes) {
+//        	n.bindPipeline(pipeline);
+//    	}
+//    }
     
     /////////////////////////////////////////////////
     /////////////////////////////////////////////////
-
-    // NOT thread safe!
-    public void drawArraysImpl(long id, int size, int first) {
-    	drawArraysImpl(currentCommandBuffer, id, size, first);
-    }
-
-    // TODO: take in list of longs
-    // This method is thread safe
-    public void drawArraysImpl(VkCommandBuffer cmdbuffer, long id, int size, int first) {
-        try(MemoryStack stack = stackPush()) {
-	        LongBuffer vertexBuffers = stack.longs(id);
-	        LongBuffer offsets = stack.longs(0);
-	        vkCmdBindVertexBuffers(cmdbuffer, 0, vertexBuffers, offsets);
-	
-	        vkCmdDraw(cmdbuffer, size, 1, first, 0);
-        }
-    }
     
     public void selectNode(int node) {
     	selectedNode = node;
+    }
+    
+    public void updateNodePipeline(long pipeline) {
+    	if (pipeline != threadNodes[selectedNode].currentPipeline) {
+        	threadNodes[selectedNode].bindPipeline(pipeline);
+    	}
     }
     
     public int getNodesCount() {
