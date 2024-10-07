@@ -13,6 +13,7 @@ import static org.lwjgl.vulkan.VK10.VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE
 import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 import static org.lwjgl.vulkan.VK10.VK_INDEX_TYPE_UINT16;
 import static org.lwjgl.vulkan.VK10.VK_INDEX_TYPE_UINT32;
+import static org.lwjgl.vulkan.VK10.VK_SHADER_STAGE_VERTEX_BIT;
 import static org.lwjgl.vulkan.VkPhysicalDeviceIndexTypeUint8FeaturesKHR.INDEXTYPEUINT8;
 import static org.lwjgl.vulkan.VK10.vkCmdBindIndexBuffer;
 import static org.lwjgl.vulkan.VK10.vkAllocateCommandBuffers;
@@ -25,8 +26,10 @@ import static org.lwjgl.vulkan.VK10.vkCmdDrawIndexed;
 import static org.lwjgl.vulkan.VK10.vkCreateCommandPool;
 import static org.lwjgl.vulkan.VK10.vkEndCommandBuffer;
 import static org.lwjgl.vulkan.VK10.vkResetCommandBuffer;
+import static org.lwjgl.vulkan.VK10.vkCmdPushConstants;
 
-
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,6 +38,7 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkCommandBuffer;
@@ -44,6 +48,9 @@ import org.lwjgl.vulkan.VkCommandBufferInheritanceInfo;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 
 //import helloVulkan.VKSetup.QueueFamilyIndices;
+
+// TODO: time active vs. time idle query information
+// TODO: average % of cmdQueue used in a frame.
 
 public class ThreadNode {
 	final static boolean DEBUG = false;
@@ -57,6 +64,7 @@ public class ThreadNode {
 	public final static int CMD_KILL = 5;
 	public final static int CMD_BUFFER_DATA = 6;
 	public final static int CMD_BIND_PIPELINE = 7;
+	public final static int CMD_PUSH_CONSTANT = 8;
 
 	// ThreadNode state statuses
 	public final static int STATE_INACTIVE = 0;
@@ -227,6 +235,8 @@ public class ThreadNode {
         		  long runTime = 0L;
         		  
         		  boolean pipelineBound = false;
+        		  
+    			  ByteBuffer pushConstantBuffer = null;
 	        	  
 	        	  // Loop until receive KILL_THREAD cmd
 	        	  while (true) {
@@ -364,6 +374,8 @@ public class ThreadNode {
 	        			  break;
 	        			  
 	        		  case CMD_DRAW_INDEXED: {
+	        			  threadState.set(STATE_RUNNING);
+	        			  println("CMD_DRAW_INDEXED (index "+index+")");
 	        			  // Int0: indiciesSize
 	        			  // Long0: indiciesBuffer
 	        			  // Int1: numBuffers
@@ -417,6 +429,46 @@ public class ThreadNode {
 	        		      
 	        			  break;
 	        		  }
+	        		  case CMD_PUSH_CONSTANT:
+	        			  threadState.set(STATE_RUNNING);
+	        			  println("CMD_PUSH_CONSTANT (index "+index+")");
+	        			  // Long0:   pipelineLayout
+	        			  // Int0:    Size/vertexOrFragment
+	        			  // Long1-X: bufferData (needs to be reconstructed
+	        			  
+	        			  // Get basic arguments
+	        			  // TODO: combine tis into vertexOrFragment
+	        			  int size = cmdIntArgs[0].get(index);
+	        			  int offset = 0; // No args for this yet
+	        			  long pipelineLayout = cmdLongArgs[0].get(index);
+	        			  
+	        			  // Needs to be in multiples of 8 for long buffer.
+	        			  // TODO: actually sort out.
+	        			  // buffer size = 12, we need to expand to 16.
+	        			  // This equasion would set it to 8.
+//	        			  size = ((size/8))*8;
+	        			  
+	        			  // Create buffer
+	        			  // It's a gobal variable so we don't have to recreate the variable each
+	        			  // time
+	        			  if (pushConstantBuffer == null || pushConstantBuffer.capacity() != size) {
+	        				  pushConstantBuffer = BufferUtils.createByteBuffer(size);
+	        				  pushConstantBuffer.order(ByteOrder.LITTLE_ENDIAN);
+	        			  }
+	        			  
+	        			  // Now we have to reconstruct the buffer from the longs
+	        			  pushConstantBuffer.rewind();
+	        			  int arg = 1;
+	        			  for (int i = 0; i < size; i += Long.BYTES) {
+	        				  pushConstantBuffer.putLong(cmdLongArgs[arg++].get(index));
+	        			  }
+	        			  pushConstantBuffer.rewind();
+
+	        			  // TODO: figure out if we're sending uniform data to the vertex shader or uniform shader.
+	        			  vkCmdPushConstants(cmdbuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, offset, pushConstantBuffer);
+        			      
+	        			 
+	        			  break;
 	        		  }
 	        		  
 	        		  // ======================
@@ -598,6 +650,33 @@ public class ThreadNode {
         }
 
         cmdID.set(index, CMD_DRAW_INDEXED);
+        wakeThread(index);
+    }
+    
+    
+    // TODO: what would be much more efficient and perhaps easier would be to pass
+    // the literal uniform arguments e.g.
+    // mat4, vec2, another vec2
+    // We would need a class that contains the args we wanna pass tho.
+    public void pushConstant(long pipelineLayout, int size, ByteBuffer buffer) {
+    	int index = getNextCMDIndex();
+		println("call CMD_PUSH_CONSTANT (index "+index+")");
+		  // Long0:   pipelineLayout
+		  // Int0:    Size/vertexOrFragment
+		  // Long1-X: bufferData (needs to be reconstructed
+    	setLongArg(0, index, pipelineLayout);
+    	setIntArg(0, index, size);
+    	
+    	// Now, we need to do the unhinged:
+    	// Stuff an entire buffer into the long args.
+    	// If we use the entire 256 bytes of pushConstant space,
+    	// we will need 32 long args altogether so it's not too bad I guess??
+    	int arg = 1;
+    	for (int i = 0; i < size; i += Long.BYTES) {
+    		setLongArg(arg++, index, buffer.getLong());
+    	}
+
+        cmdID.set(index, CMD_PUSH_CONSTANT);
         wakeThread(index);
     }
     

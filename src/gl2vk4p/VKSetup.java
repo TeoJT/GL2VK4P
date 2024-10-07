@@ -183,6 +183,7 @@ public class VKSetup {
     public long commandPool;
     public long transferCommandPool;
     public QueueFamilyIndices queueIndicies;
+    public int pushConstantsSizeLimit = 0;
     
     public boolean FORCE_TRANSFER_QUEUE = true;
     
@@ -602,6 +603,7 @@ public class VKSetup {
         boolean extensionsSupported = checkDeviceExtensionSupport(device);
         boolean swapChainAdequate = false;
         boolean integrated = false;
+        int pushConstantsSize = 0;
 
         if(extensionsSupported) {
             try(MemoryStack stack = stackPush()) {
@@ -611,13 +613,20 @@ public class VKSetup {
                 vkGetPhysicalDeviceProperties(device, deviceProperties);
                 vkGetPhysicalDeviceFeatures(device, deviceFeatures);
                 
+                pushConstantsSize = deviceProperties.limits().maxPushConstantsSize();
+                
                 SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, stack);
                 swapChainAdequate = swapChainSupport.formats.hasRemaining() && swapChainSupport.presentModes.hasRemaining();
                 integrated = deviceProperties.deviceType() == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
             }
         }
-
-        return findQueueFamilies(device).isComplete() && extensionsSupported && swapChainAdequate && integrated;
+        
+        boolean suitable = findQueueFamilies(device).isComplete() && extensionsSupported && swapChainAdequate && integrated;
+        // Set values here cus I'm too lazy to do it properly
+        if (suitable) {
+        	pushConstantsSizeLimit = pushConstantsSize;
+        }
+        return suitable;
     }
 
 

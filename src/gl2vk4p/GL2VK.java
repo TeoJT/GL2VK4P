@@ -11,6 +11,7 @@ import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class GL2VK {
 	
@@ -223,7 +224,7 @@ public class GL2VK {
 		if (boundBuffer <= 0) {
 			warn("glVertexAttribPointer: don't forget to bind a buffer!");
 		}
-		if (glAttribs[glindex] == null) {
+		if (glindex == -1 || glAttribs[glindex] == null) {
 			warn("glVertexAttribPointer: Vertex attrib "+glindex+" doesn't exist.");
 			return;
 		}
@@ -408,7 +409,17 @@ public class GL2VK {
 		boundProgram = program;
 	}
 	
-	
+	public void glUniform2f(int location, float value0, float value1) {
+		if (checkAndPrepareProgram() == false) return;
+		
+		int size = 16;
+		ByteBuffer buffer = ByteBuffer.allocate(size);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		buffer.putFloat(value0);
+		buffer.putFloat(value1);
+		buffer.rewind();
+		system.nodePushConstants(programs[boundProgram].pipelineLayout, size, buffer);
+	}
 	
 	
 	

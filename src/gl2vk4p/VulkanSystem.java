@@ -4,6 +4,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
@@ -308,7 +309,9 @@ public class VulkanSystem {
     }
     
     
-    
+    public int getPushConstantsSizeLimit() {
+    	return vkbase.pushConstantsSizeLimit;
+    }
     
     
     
@@ -446,6 +449,10 @@ public class VulkanSystem {
     
     public void nodeDrawIndexed(int indiciesSize, long indiciesBuffer, ArrayList<Long> vertexBuffers, int offset, int type) {
     	threadNodes[selectedNode].drawIndexed(indiciesSize, indiciesBuffer, vertexBuffers, offset, type);
+    }
+    
+    public void nodePushConstants(long pipelineLayout, int size, ByteBuffer buffer) {
+    	threadNodes[selectedNode].pushConstant(pipelineLayout, size, buffer);
     }
     
 //    public void bindPipelineAllNodes(long pipeline) {

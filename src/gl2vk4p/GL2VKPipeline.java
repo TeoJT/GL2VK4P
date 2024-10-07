@@ -50,6 +50,7 @@ import org.lwjgl.vulkan.VkPipelineRasterizationStateCreateInfo;
 import org.lwjgl.vulkan.VkPipelineShaderStageCreateInfo;
 import org.lwjgl.vulkan.VkPipelineVertexInputStateCreateInfo;
 import org.lwjgl.vulkan.VkPipelineViewportStateCreateInfo;
+import org.lwjgl.vulkan.VkPushConstantRange;
 import org.lwjgl.vulkan.VkRect2D;
 import org.lwjgl.vulkan.VkShaderModuleCreateInfo;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
@@ -109,7 +110,8 @@ public class GL2VKPipeline {
 	public SPIRV vertShaderSPIRV = null;
 	public SPIRV fragShaderSPIRV = null;
 
-    private long pipelineLayout;
+	// Public for use with push constants.
+    public long pipelineLayout = -1;
     public long graphicsPipeline = -1;
     
 	public ShaderAttribInfo attribInfo = null;
@@ -260,8 +262,26 @@ public class GL2VKPipeline {
 
             // ===> PIPELINE LAYOUT CREATION <===
 
+            // PUSH CONSTANTS
+            // TODO
+            // TODO
+            // TODO
+            // TODO: automatically get pushconstants size from shader sources and
+            // then use getPushConstantsSizeLimit() to check if size is within the limits.
+            // If not... we'll need to halt the program and inform the programmer...
+            VkPushConstantRange.Buffer pushConstants = VkPushConstantRange.calloc(1, stack);
+            pushConstants.offset(0);
+            pushConstants.size(16);
+
+		    // TODO: figure out if we're sending uniform data to the vertex shader or uniform shader.
+            pushConstants.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
+            /////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////
+            
+
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
+            pipelineLayoutInfo.pPushConstantRanges(pushConstants);
 
             LongBuffer pPipelineLayout = stack.longs(VK_NULL_HANDLE);
 

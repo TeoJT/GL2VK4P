@@ -54,7 +54,8 @@ public class GLExample {
 //			triangles();
 //			trianglesSeparate();
 //			throttleTest();
-			indices();
+//			indices();
+			indicesUniform();
 
 		}
 		catch (Exception e) {
@@ -65,13 +66,8 @@ public class GLExample {
 	}
 	
 	
-	// Draw a square with indicies
-	public void indices() {
+	private void createIndicesSquare(ByteBuffer vertexBuffer, ByteBuffer colorBuffer, ByteBuffer indexBuffer) {
 
-		// Create the data
-    	ByteBuffer vertexBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 2);
-    	ByteBuffer colorBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 3);
-    	ByteBuffer indexBuffer = ByteBuffer.allocate(Short.BYTES * 6);
     	vertexBuffer.order(ByteOrder.LITTLE_ENDIAN);
     	colorBuffer.order(ByteOrder.LITTLE_ENDIAN);
     	indexBuffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -114,6 +110,110 @@ public class GLExample {
     	vertexBuffer.rewind();
     	colorBuffer.rewind();
     	indexBuffer.rewind();
+	}
+	
+	
+	
+	public void indicesUniform() {
+
+		// Create the data
+    	ByteBuffer vertexBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 2);
+    	ByteBuffer colorBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 3);
+    	ByteBuffer indexBuffer = ByteBuffer.allocate(Short.BYTES * 6);
+    	createIndicesSquare(vertexBuffer, colorBuffer, indexBuffer);
+    	
+    	// Gen buffers
+    	IntBuffer out = IntBuffer.allocate(3);
+    	gl.glGenBuffers(3, out);
+    	int glVertBuff = out.get(0);
+    	int glColBuff = out.get(1);
+    	int glIndexBuff = out.get(2);
+    	
+    	
+    	// Create our gpu program
+    	int program = gl.glCreateProgram();
+    	int vertShader = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+    	int fragShader = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
+    	
+    	// Shader source
+    	gl.glShaderSource(vertShader, Util.readFile("resources/shaders/uniform.vert"));
+    	gl.glShaderSource(fragShader, Util.readFile("resources/shaders/uniform.frag"));
+    	// Compile the shaders
+    	gl.glCompileShader(vertShader);
+    	gl.glCompileShader(fragShader);
+    	// Check shaders
+		IntBuffer compileStatus = IntBuffer.allocate(1);
+		gl.glGetShaderiv(vertShader, GL2VK.GL_COMPILE_STATUS, compileStatus);
+		if (compileStatus.get(0) == GL2VK.GL_FALSE) {
+			System.out.println(gl.glGetShaderInfoLog(vertShader));
+			System.exit(1);
+		}
+		gl.glGetShaderiv(fragShader, GL2VK.GL_COMPILE_STATUS, compileStatus);
+		if (compileStatus.get(0) == GL2VK.GL_FALSE) {
+			System.out.println(gl.glGetShaderInfoLog(fragShader));
+			System.exit(1);
+		}
+    	// Attach the shaders
+    	gl.glAttachShader(program, vertShader);
+    	gl.glAttachShader(program, fragShader);
+    	// Don't need em anymore
+    	gl.glDeleteShader(vertShader);
+    	gl.glDeleteShader(fragShader);
+    	
+    	gl.glLinkProgram(program);
+
+    	
+		// Setup up attribs
+		int position = gl.glGetAttribLocation(program, "inPosition");
+		int color = gl.glGetAttribLocation(program, "inColor");
+		
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, glVertBuff);
+    	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, vertexBuffer.capacity(), vertexBuffer, 0);
+		gl.glVertexAttribPointer(position, 2*4, 0, false, 2*4, 0);
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, glColBuff);
+    	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, colorBuffer.capacity(), colorBuffer, 0);
+		gl.glVertexAttribPointer(color, 3*4, 0, false, 3*4, 0);
+
+    	gl.glBindBuffer(GL2VK.GL_INDEX_BUFFER, glIndexBuff);
+    	gl.glBufferData(GL2VK.GL_INDEX_BUFFER, indexBuffer.capacity(), indexBuffer, 0);
+    	
+    	
+		
+		
+		gl.useProgram(program);
+		
+		boolean multithreaded = false;
+		int threadIndex = 0;
+		
+		double qtime = 0d;
+
+    	while (!gl.shouldClose()) {
+    		gl.beginRecord();
+
+    		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
+    		else gl.selectNode(0);
+
+    		qtime += 0.1d;
+    		
+        	gl.glBindBuffer(GL2VK.GL_INDEX_BUFFER, glIndexBuff);
+    		gl.glUniform2f(0, (float)Math.sin(qtime)*0.5f, (float)Math.cos(qtime)*0.5f);
+    		gl.glDrawElements(0, 6, GL2VK.GL_UNSIGNED_SHORT, 0);
+    		gl.endRecord();
+    		
+    		frameWait();
+    	}
+	}
+	
+	
+	
+	// Draw a square with indicies
+	public void indices() {
+
+		// Create the data
+    	ByteBuffer vertexBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 2);
+    	ByteBuffer colorBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 3);
+    	ByteBuffer indexBuffer = ByteBuffer.allocate(Short.BYTES * 6);
+    	createIndicesSquare(vertexBuffer, colorBuffer, indexBuffer);
     	
     	// Gen buffers
     	IntBuffer out = IntBuffer.allocate(3);
