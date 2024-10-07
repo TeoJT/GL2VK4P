@@ -88,13 +88,18 @@ public class VulkanSystem {
     }
 
     
-    
-    public void cleanup() {
+    public void cleanupNodes() {
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            vkWaitForFences(device, inFlightFrames.get(i).pFence(), true, Util.UINT64_MAX);
+        }
     	
     	for (ThreadNode n : threadNodes) {
-    		n.kill();
+    		n.killAndCleanup();
     	}
-    	
+    }
+    
+    public void cleanupRest() {
+    	vkbase.destroyOtherThings();
 
         cleanupSwapChain();
 
@@ -316,7 +321,8 @@ public class VulkanSystem {
     
     
     public VkCommandBuffer currentCommandBuffer = null;
-    private IntBuffer currentImageIndex = null;
+//    private IntBuffer currentImageIndex = null;
+    private int currentImageIndex = 0;
     public VkRenderPassBeginInfo renderPassInfo = null;
 
     public void beginRecord() {
@@ -327,12 +333,12 @@ public class VulkanSystem {
             Frame thisFrame = inFlightFrames.get(currentFrame);
 
             vkWaitForFences(device, thisFrame.pFence(), true, Util.UINT64_MAX);
-
-            // Aquire next image.
-            currentImageIndex = stack.mallocInt(1);
+            
+            IntBuffer currentImageIndex = stack.mallocInt(1);
 
             int vkResult = vkAcquireNextImageKHR(device, vkbase.swapChain, Util.UINT64_MAX,
                     thisFrame.imageAvailableSemaphore(), VK_NULL_HANDLE, currentImageIndex);
+            
 
             // Window resizing
             if(vkResult == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -343,7 +349,7 @@ public class VulkanSystem {
             }
             
             final int imageIndex = currentImageIndex.get(0);
-
+            this.currentImageIndex = currentImageIndex.get(0);
         	
             // Fence wait for images in flight.
             if(imagesInFlight.containsKey(imageIndex)) {
@@ -358,7 +364,7 @@ public class VulkanSystem {
     	
     	// Now to the command buffer stuff.
         vkResetCommandBuffer(currentCommandBuffer, 0);
-        final int imageIndex = currentImageIndex.get(0);
+        final int imageIndex = this.currentImageIndex;
         
         try(MemoryStack stack = stackPush()) {
             
@@ -431,42 +437,6 @@ public class VulkanSystem {
         submitAndPresent();
     }
     
-    ////////////////
-    // NODE COMMANDS
-    ////////////////
-    
-    public void nodeDrawArrays(ArrayList<Long> buffers, int size, int first) {
-    	threadNodes[selectedNode].drawArrays(buffers, size, first);
-    }
-    
-    public void nodeBufferData(long srcBuffer, long dstBuffer, int size) {
-    	threadNodes[selectedNode].bufferData(srcBuffer, dstBuffer, size);
-    }
-    
-    public void nodeBindPipeline(long pipeline) {
-    	threadNodes[selectedNode].bindPipeline(pipeline);
-    }
-    
-    public void nodeDrawIndexed(int indiciesSize, long indiciesBuffer, ArrayList<Long> vertexBuffers, int offset, int type) {
-    	threadNodes[selectedNode].drawIndexed(indiciesSize, indiciesBuffer, vertexBuffers, offset, type);
-    }
-    
-    public void nodePushConstants(long pipelineLayout, int size, ByteBuffer buffer) {
-    	threadNodes[selectedNode].pushConstant(pipelineLayout, size, buffer);
-    }
-    
-//    public void bindPipelineAllNodes(long pipeline) {
-//    	// Bind pipeline in our primary buffer
-////    	vkCmdBindPipeline(currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-//    	// Bind pipeline in all secondary command bufers
-//    	for (ThreadNode n : threadNodes) {
-//        	n.bindPipeline(pipeline);
-//    	}
-//    }
-    
-    /////////////////////////////////////////////////
-    /////////////////////////////////////////////////
-    
     public void selectNode(int node) {
     	selectedNode = node;
     }
@@ -526,8 +496,10 @@ public class VulkanSystem {
 	
 	        presentInfo.swapchainCount(1);
 	        presentInfo.pSwapchains(stack.longs(vkbase.swapChain));
-	
-	        presentInfo.pImageIndices(currentImageIndex);
+	        
+	        IntBuffer imgIndexBuffer = stack.mallocInt(1);
+	        imgIndexBuffer.put(0, currentImageIndex);
+	        presentInfo.pImageIndices(imgIndexBuffer);
 	
 	        vkResult = vkQueuePresentKHR(vkbase.presentQueue, presentInfo);
 	
@@ -547,19 +519,43 @@ public class VulkanSystem {
 
 
     public void cleanupSwapChain() {
-
         swapChainFramebuffers.forEach(framebuffer -> vkDestroyFramebuffer(device, framebuffer, null));
-
         try(MemoryStack stack = stackPush()) {vkFreeCommandBuffers(device, vkbase.commandPool, Util.asPointerBuffer(stack, commandBuffers));}
-
 
         vkDestroyRenderPass(device, renderPass, null);
 
         vkbase.swapChainImageViews.forEach(imageView -> vkDestroyImageView(device, imageView, null));
 
         vkDestroySwapchainKHR(device, vkbase.swapChain, null);
-        
     }
+    
+
+    
+    ////////////////
+    // NODE COMMANDS
+    ////////////////
+    public void nodeDrawArrays(ArrayList<Long> buffers, int size, int first) {
+    	threadNodes[selectedNode].drawArrays(buffers, size, first);
+    }
+    
+    public void nodeBufferData(long srcBuffer, long dstBuffer, int size) {
+    	threadNodes[selectedNode].bufferData(srcBuffer, dstBuffer, size);
+    }
+    
+    public void nodeBindPipeline(long pipeline) {
+    	threadNodes[selectedNode].bindPipeline(pipeline);
+    }
+    
+    public void nodeDrawIndexed(int indiciesSize, long indiciesBuffer, ArrayList<Long> vertexBuffers, int offset, int type) {
+    	threadNodes[selectedNode].drawIndexed(indiciesSize, indiciesBuffer, vertexBuffers, offset, type);
+    }
+    
+    public void nodePushConstants(long pipelineLayout, int size, ByteBuffer buffer) {
+    	threadNodes[selectedNode].pushConstant(pipelineLayout, size, buffer);
+    }
+    
+    /////////////////////////////////////////////////
+    /////////////////////////////////////////////////
 
 
 

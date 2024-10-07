@@ -63,6 +63,7 @@ import static org.lwjgl.vulkan.VK10.vkCmdCopyBuffer;
 import static org.lwjgl.vulkan.VK10.vkCreateDevice;
 import static org.lwjgl.vulkan.VK10.vkCreateImageView;
 import static org.lwjgl.vulkan.VK10.vkCreateInstance;
+import static org.lwjgl.vulkan.VK10.vkDestroyCommandPool;
 import static org.lwjgl.vulkan.VK10.vkDestroyFramebuffer;
 import static org.lwjgl.vulkan.VK10.vkDestroyImageView;
 import static org.lwjgl.vulkan.VK10.vkDestroyPipeline;
@@ -231,6 +232,15 @@ public class VKSetup {
             vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, allocationCallbacks);
         }
 
+    }
+    
+    public void destroyOtherThings() {
+		try(MemoryStack stack = stackPush()) {
+			ArrayList<VkCommandBuffer> deleteList = new ArrayList<VkCommandBuffer>();
+			deleteList.add(transferCommandBuffer);
+			vkFreeCommandBuffers(device, transferCommandPool, Util.asPointerBuffer(stack, deleteList));
+		}
+		vkDestroyCommandPool(device, transferCommandPool, null);
     }
 
     public class QueueFamilyIndices {
@@ -512,7 +522,7 @@ public class VKSetup {
             if(swapChainSupport.capabilities.maxImageCount() > 0 && imageCount.get(0) > swapChainSupport.capabilities.maxImageCount()) {
                 imageCount.put(0, swapChainSupport.capabilities.maxImageCount());
             }
-
+            
             VkSwapchainCreateInfoKHR createInfo = VkSwapchainCreateInfoKHR.calloc(stack);
 
             createInfo.sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR);

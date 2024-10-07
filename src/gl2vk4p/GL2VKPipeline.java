@@ -137,6 +137,7 @@ public class GL2VKPipeline {
 	public GL2VKPipeline() {
 	}
 
+	// Same from the tutorial
     private long createShaderModule(ByteBuffer spirvCode) {
         try(MemoryStack stack = stackPush()) {
 
@@ -451,28 +452,6 @@ public class GL2VKPipeline {
 //    	  fragShaderSPIRV = compileShaderFile("resources/shaders/09_shader_base.frag", FRAGMENT_SHADER);
 	}
 	
-	
-
-
-//  public int getAttribvkLocation(String name) {
-//  	if (!attribNameToLocation.containsKey(name)) return -1;
-//  	return attribNameToLocation.get(name);
-//  }
-    
-    // Type args
-    // 1: vertex
-    // 2: fragment
-    // Unused cus it's just easier to delete it ourselves
-//    public void deleteShaderModule(int type) {
-//    	switch (type) {
-//    	case 1:
-//    		vkDestroyShaderModule(vkbase.device, vertShaderModule, null);
-//    		break;
-//    	case 2:
-//    		vkDestroyShaderModule(vkbase.device, fragShaderModule, null);
-//    		break;
-//    	}
-//    }
     
     public void clean() {
         vkDestroyPipeline(system.device, graphicsPipeline, null);

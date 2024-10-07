@@ -25,8 +25,10 @@ import static org.lwjgl.vulkan.VK10.vkCmdDraw;
 import static org.lwjgl.vulkan.VK10.vkCmdDrawIndexed;
 import static org.lwjgl.vulkan.VK10.vkCreateCommandPool;
 import static org.lwjgl.vulkan.VK10.vkEndCommandBuffer;
+import static org.lwjgl.vulkan.VK10.vkFreeCommandBuffers;
 import static org.lwjgl.vulkan.VK10.vkResetCommandBuffer;
 import static org.lwjgl.vulkan.VK10.vkCmdPushConstants;
+import static org.lwjgl.vulkan.VK10.vkDestroyCommandPool;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -95,7 +97,7 @@ public class ThreadNode {
 	// To avoid clashing from the main thread accessing the front of the queue while the
 	// other thread is accessing the end of the queue, best solution is to make this big
 	// enough lol.
-	private final static int MAX_QUEUE_LENGTH = 1000;
+	private final static int MAX_QUEUE_LENGTH = 1024;
 	
 	private VulkanSystem system;
 	private VKSetup vkbase;
@@ -181,7 +183,6 @@ public class ThreadNode {
 	        commandPool = pCommandPool.get(0);
         }
 
-//    	final int commandBuffersCount = system.swapChainFramebuffers.size();
         final int commandBuffersCount = VulkanSystem.MAX_FRAMES_IN_FLIGHT;
     	
         // Create secondary command buffer
@@ -730,6 +731,32 @@ public class ThreadNode {
         cmdID.set(index, CMD_KILL);
         // No arguments
         wakeThread(index);
+	}
+	
+	public void killAndCleanup() {
+		kill();
+		// Wait for thread to end
+		while (threadState.get() != STATE_KILLED) {
+			// Do the classic ol "wait 1ms each loop"
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+			}
+		}
+		// Now clean up our mess
+		
+		if (openCmdBuffer.get() == true) {
+			vkEndCommandBuffer(cmdbuffers[currentFrame.get()]);
+		}
+		
+		try(MemoryStack stack = stackPush()) {
+			ArrayList<VkCommandBuffer> deleteList = new ArrayList<VkCommandBuffer>();
+			for (int i = 0; i < cmdbuffers.length; i++) {
+				deleteList.add(cmdbuffers[i]);
+			}
+			vkFreeCommandBuffers(system.device, commandPool, Util.asPointerBuffer(stack, deleteList));
+		}
+		vkDestroyCommandPool(system.device, commandPool, null);
 	}
 	
 	public VkCommandBuffer getBuffer() {

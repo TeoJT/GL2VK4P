@@ -422,7 +422,26 @@ public class GL2VK {
 	}
 	
 	
-	
+
+	private void cleanup() {
+		system.cleanupNodes();
+		
+		// Clean up graphics buffers
+		for (int i = 0; i < buffers.length; i++) {
+			if (buffers[i] != null) {
+				buffers[i].destroy();
+			}
+		}
+		
+		// Clean up pipelines
+		for (int i = 0; i < programs.length; i++) {
+			if (programs[i] != null) {
+				programs[i].clean();
+			}
+		}
+		
+		system.cleanupRest();
+	}
 	
 	//     Placeholders for testing
 	public boolean shouldClose() {
@@ -430,8 +449,9 @@ public class GL2VK {
 	}
 	
 	public void close() {
-		system.cleanup();
+		cleanup();
 	}
+	
 	
 	public void beginRecord() {
 		system.beginRecord();

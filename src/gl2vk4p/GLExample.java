@@ -19,11 +19,6 @@ public class GLExample {
     	private Vector2fc pos;
     	private Vector3fc color;
     	
-    	public Vertex(Vector2fc pos, Vector3fc color) {
-    		this.pos = pos;
-    		this.color = color;
-    	}
-    	
     	public Vertex(float x, float y, float r, float g, float b) {
     		this.pos = new Vector2f(x, y);
     		this.color = new Vector3f(r,g,b);
@@ -62,7 +57,6 @@ public class GLExample {
 			e.printStackTrace();
 			System.exit(1);
 		}
-    	gl.close();
 	}
 	
 	
@@ -182,7 +176,7 @@ public class GLExample {
 		
 		gl.useProgram(program);
 		
-		boolean multithreaded = false;
+		boolean multithreaded = true;
 		int threadIndex = 0;
 		
 		double qtime = 0d;
@@ -200,8 +194,9 @@ public class GLExample {
     		gl.glDrawElements(0, 6, GL2VK.GL_UNSIGNED_SHORT, 0);
     		gl.endRecord();
     		
-    		frameWait();
+//    		frameWait();
     	}
+    	gl.close();
 	}
 	
 	
@@ -278,6 +273,7 @@ public class GLExample {
     		
     		frameWait();
     	}
+    	gl.close();
 	}
 	
 
