@@ -310,7 +310,7 @@ public class VulkanSystem {
     }
     
     private void createCommandPool() {
-    	vkbase.createCommandPoolWithTransfer();
+    	vkbase.createCommandPool();
     }
     
     

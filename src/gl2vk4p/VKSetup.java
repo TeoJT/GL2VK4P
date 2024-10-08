@@ -186,7 +186,7 @@ public class VKSetup {
     public QueueFamilyIndices queueIndicies;
     public int pushConstantsSizeLimit = 0;
     
-    public boolean FORCE_TRANSFER_QUEUE = true;
+    public boolean useTransferQueue = true;
     
     public void initBase() {
     	vkwindow = new VSurface();
@@ -235,12 +235,16 @@ public class VKSetup {
     }
     
     public void destroyOtherThings() {
-		try(MemoryStack stack = stackPush()) {
-			ArrayList<VkCommandBuffer> deleteList = new ArrayList<VkCommandBuffer>();
-			deleteList.add(transferCommandBuffer);
-			vkFreeCommandBuffers(device, transferCommandPool, Util.asPointerBuffer(stack, deleteList));
+    	// Only need to destroy these "other things" (transfer stuff)
+    	// if we're using the transfer queue.
+		if (useTransferQueue) {
+			try(MemoryStack stack = stackPush()) {
+				ArrayList<VkCommandBuffer> deleteList = new ArrayList<VkCommandBuffer>();
+					deleteList.add(transferCommandBuffer);
+				vkFreeCommandBuffers(device, transferCommandPool, Util.asPointerBuffer(stack, deleteList));
+			}
+			vkDestroyCommandPool(device, transferCommandPool, null);
 		}
-		vkDestroyCommandPool(device, transferCommandPool, null);
     }
 
     public class QueueFamilyIndices {
@@ -251,15 +255,24 @@ public class VKSetup {
         public Integer transferFamily;
 
         private boolean isComplete() {
-            return graphicsFamily != null && presentFamily != null && transferFamily != null;
+        	if (useTransferQueue) 
+        		return graphicsFamily != null && presentFamily != null && transferFamily != null;
+        	else
+        		return graphicsFamily != null && presentFamily != null;
         }
 
         public int[] unique() {
-            return IntStream.of(graphicsFamily, presentFamily, transferFamily).distinct().toArray();
+        	if (useTransferQueue) 
+        		return IntStream.of(graphicsFamily, presentFamily, transferFamily).distinct().toArray();
+        	else 
+        		return IntStream.of(graphicsFamily, presentFamily).distinct().toArray();
         }
 
         public int[] array() {
-            return new int[] {graphicsFamily, presentFamily, transferFamily};
+        	if (useTransferQueue) 
+        		return new int[] {graphicsFamily, presentFamily, transferFamily};
+        	else
+        		return new int[] {graphicsFamily, presentFamily};
         }
     }
 
@@ -350,7 +363,7 @@ public class VKSetup {
 
 
 
-    public void createCommandPoolWithTransfer() {
+    public void createCommandPool() {
 
         try(MemoryStack stack = stackPush()) {
 
@@ -373,21 +386,24 @@ public class VKSetup {
             commandPool = pCommandPool.get(0);
 
             // ===> Part 2: Create the transfer command pool <===
-            poolInfo.queueFamilyIndex(queueIndicies.transferFamily);
-//            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-            
-            // Tell Vulkan that the buffers of this pool will be constantly rerecorded
-//            poolInfo.flags(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
-            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-            // Create our transfer command pool
-            if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
-                throw new RuntimeException("Failed to create command pool");
+            // BUT ONLY IF WE'RE ALLOWED!!!
+            if (useTransferQueue) {
+	            poolInfo.queueFamilyIndex(queueIndicies.transferFamily);
+	//            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	            
+	            // Tell Vulkan that the buffers of this pool will be constantly rerecorded
+	//            poolInfo.flags(VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+	            poolInfo.flags(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	
+	            // Create our transfer command pool
+	            if (vkCreateCommandPool(device, poolInfo, null, pCommandPool) != VK_SUCCESS) {
+	                throw new RuntimeException("Failed to create command pool");
+	            }
+	            // Boom. Assign'd again.
+	            transferCommandPool = pCommandPool.get(0);
+	
+	            allocateTransferCommandBuffer();
             }
-            // Boom. Assign'd again.
-            transferCommandPool = pCommandPool.get(0);
-
-            allocateTransferCommandBuffer();
         }
     }
 
@@ -457,18 +473,27 @@ public class VKSetup {
             vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
             presentQueue = new VkQueue(pQueue.get(0), device);
 
-            vkGetDeviceQueue(device, indices.transferFamily, 0, pQueue);
-            transferQueue = new VkQueue(pQueue.get(0), device);
+            if (useTransferQueue) {
+	            vkGetDeviceQueue(device, indices.transferFamily, 0, pQueue);
+	            transferQueue = new VkQueue(pQueue.get(0), device);
+            }
         }
     }
 
 
     private VkSurfaceFormatKHR chooseSwapSurfaceFormat(VkSurfaceFormatKHR.Buffer availableFormats) {
-        return availableFormats.stream()
-                .filter(availableFormat -> availableFormat.format() == VK_FORMAT_B8G8R8_UNORM)
-                .filter(availableFormat -> availableFormat.colorSpace() == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-                .findAny()
-                .orElse(availableFormats.get(0));
+//        return availableFormats.stream()
+//                .filter(availableFormat -> availableFormat.format() == VK_FORMAT_B8G8R8_UNORM)
+//                .filter(availableFormat -> availableFormat.colorSpace() == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+//                .findAny()
+//                .orElse(availableFormats.get(0));
+    	
+    	// We want one-to-one with the Processing program so no nonlinear "corrected" colors.
+    	
+    	return availableFormats.stream()
+              .filter(availableFormat -> availableFormat.format() == VK_FORMAT_B8G8R8_UNORM)
+              .findAny()
+              .orElse(availableFormats.get(0));
     }
 
     private int chooseSwapPresentMode(IntBuffer availablePresentModes) {
@@ -666,13 +691,16 @@ public class VKSetup {
                 if((queueFamilies.get(i).queueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
                     indices.graphicsFamily = i;
                 }
-                else if((queueFamilies.get(i).queueFlags() & VK_QUEUE_TRANSFER_BIT) != 0) {
+                // Only if transferQueue is enabled.
+                else if (useTransferQueue && ((queueFamilies.get(i).queueFlags() & VK_QUEUE_TRANSFER_BIT) != 0)) {
                     indices.transferFamily = i;
                 }
-                // In case of having only 1 queueFamily, use the same index since VK_QUEUE_GRAPHICS_BIT also implicitly
-                // covers VK_QUEUE_TRANSFER_BIT
-                if(queueFamilies.capacity() == 1){
-                    indices.transferFamily = i;
+                // In case of having only 1 queueFamily, it means we're gonna get a validation error if we
+                // try using a transfer queue so let's not use a transfer queue.
+                // Only if transferQueue is enabled.
+                if(useTransferQueue && queueFamilies.capacity() == 1){
+//                    indices.transferFamily = i;
+                	useTransferQueue = false;
                 }
 
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, i, vkwindow.surface, presentSupport);
@@ -802,10 +830,17 @@ public class VKSetup {
             bufferInfo.sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
             bufferInfo.size(size);
             bufferInfo.usage(usage);
+            
             // Change the sharing mode to concurrent (it will be shared between graphics and transfer queues)
-            QueueFamilyIndices queueFamilies = findQueueFamilies(physicalDevice);
-            bufferInfo.pQueueFamilyIndices(stack.ints(queueFamilies.graphicsFamily, queueFamilies.transferFamily));
-            bufferInfo.sharingMode(VK_SHARING_MODE_CONCURRENT);
+            // but only if useTransferQueue enabled
+            if (useTransferQueue) {
+	            QueueFamilyIndices queueFamilies = findQueueFamilies(physicalDevice);
+	            bufferInfo.pQueueFamilyIndices(stack.ints(queueFamilies.graphicsFamily, queueFamilies.transferFamily));
+	            bufferInfo.sharingMode(VK_SHARING_MODE_CONCURRENT);
+            }
+            else {
+                bufferInfo.sharingMode(VK_SHARING_MODE_EXCLUSIVE);
+            }
 
             if(vkCreateBuffer(device, bufferInfo, null, pBuffer) != VK_SUCCESS) {
                 throw new RuntimeException("Failed to create vertex buffer");
@@ -828,7 +863,7 @@ public class VKSetup {
     }
 
     
-    public void copyBuffer(long srcBuffer, long dstBuffer, long size) {
+    public void copyBufferTransfer(long srcBuffer, long dstBuffer, long size) {
 //    	
         try(MemoryStack stack = stackPush()) {
 
@@ -860,53 +895,58 @@ public class VKSetup {
     
     
     public void copyBufferAndWait(long srcBuffer, long dstBuffer, long size) {
-    	copyBuffer(srcBuffer, dstBuffer, size);
-        vkQueueWaitIdle(transferQueue);
+    	// Too lazy to combine it into one function
+    	if (useTransferQueue) {
+    		copyBufferTransfer(srcBuffer, dstBuffer, size);
+            vkQueueWaitIdle(transferQueue);
+    	}
+    	else {
+    		copyBufferDefault(srcBuffer, dstBuffer, size);
+            vkQueueWaitIdle(graphicsQueue);
+    	}
+
     }
     
     
 
     
-    public void copyBufferDefault(long srcBuffer, long dstBuffer, long size) {
+    private void copyBufferDefault(long srcBuffer, long dstBuffer, long size) {
 
         try(MemoryStack stack = stackPush()) {
-            
-	        VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
-	        allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
-	        allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-	        allocInfo.commandPool(commandPool);
-	        allocInfo.commandBufferCount(1);
 
+            VkCommandBufferAllocateInfo allocInfo = VkCommandBufferAllocateInfo.calloc(stack);
+            allocInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
+            allocInfo.level(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+            allocInfo.commandPool(commandPool);
+            allocInfo.commandBufferCount(1);
 
             PointerBuffer pCommandBuffer = stack.mallocPointer(1);
-	        vkAllocateCommandBuffers(device, allocInfo, pCommandBuffer);
-	        VkCommandBuffer tempBuffer = new VkCommandBuffer(pCommandBuffer.get(0), device);
-
+            vkAllocateCommandBuffers(device, allocInfo, pCommandBuffer);
+            VkCommandBuffer commandBuffer = new VkCommandBuffer(pCommandBuffer.get(0), device);
 
             VkCommandBufferBeginInfo beginInfo = VkCommandBufferBeginInfo.calloc(stack);
             beginInfo.sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
             beginInfo.flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-            vkBeginCommandBuffer(tempBuffer, beginInfo);
+            vkBeginCommandBuffer(commandBuffer, beginInfo);
+            {
+                VkBufferCopy.Buffer copyRegion = VkBufferCopy.calloc(1, stack);
+                copyRegion.size(size);
+                vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, copyRegion);
+            }
+            vkEndCommandBuffer(commandBuffer);
 
-            VkBufferCopy.Buffer copyRegion = VkBufferCopy.calloc(1, stack);
-            copyRegion.size(size);
-            vkCmdCopyBuffer(tempBuffer, srcBuffer, dstBuffer, copyRegion);
+            VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
+            submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
+            submitInfo.pCommandBuffers(pCommandBuffer);
 
-            vkEndCommandBuffer(tempBuffer);
+            if(vkQueueSubmit(graphicsQueue, submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+                throw new RuntimeException("Failed to submit copy command buffer");
+            }
 
-        
-	        VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack);
-	        submitInfo.sType(VK_STRUCTURE_TYPE_SUBMIT_INFO);
-	        submitInfo.pCommandBuffers(stack.pointers(tempBuffer));
-	
-	        if(vkQueueSubmit(graphicsQueue, submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-	            throw new RuntimeException("Failed to submit copy command buffer");
-	        }
-	
-	        vkQueueWaitIdle(graphicsQueue);
+            vkQueueWaitIdle(graphicsQueue);
 
-	        vkFreeCommandBuffers(device, commandPool, tempBuffer);
+            vkFreeCommandBuffers(device, commandPool, pCommandBuffer);
         }
     }
 
