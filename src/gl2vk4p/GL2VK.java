@@ -1,6 +1,7 @@
 package gl2vk4p;
 
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 
 import gl2vk4p.ShaderSPIRVUtils.SPIRV;
 import gl2vk4p.ShaderSPIRVUtils.ShaderKind;
@@ -46,8 +47,22 @@ public class GL2VK {
 		// for why we're oddly putting this here.
 		public ShaderAttribInfo attribInfo = null;
 		
+		// Once the vert and frag shaders are linked it will
+		// be combined into one ArrayList
+		public ArrayList<GLUniform> uniforms = new ArrayList<GLUniform>();
+		
 		public GLShader(int type) {
 			this.type = type;
+		}
+		
+		public void setUniforms(ArrayList<GLUniform> uniforms) {
+			this.uniforms = uniforms;
+			for (GLUniform u : uniforms) {
+				// I could and should do it the proper way to
+				// ensure GL_VERTEX_SHADER is the same meaning for GLUniform
+				// class but let's be real; it's an int with 2 different values.
+				u.vertexFragment = type;
+			}
 		}
 	}
 	
@@ -316,7 +331,7 @@ public class GL2VK {
 		// TODO: failed compiles just throws an exception. Actually check to see if it compiled successfully
 		// or not.
 		
-		if (sh.successfulCompile && sh.type == GL_VERTEX_SHADER) {
+		if (sh.successfulCompile) {
 			// Here, we must get attribute information.
 			//
 			// "Why not do it when we create our pipeline or when we
@@ -326,7 +341,12 @@ public class GL2VK {
 			// call glGetAttribLocation before attaching the shader or 
 			// linking the program.
 			// Thanks, opengl, you're so messy that we have to do things weirdly.
-			sh.attribInfo = new ShaderAttribInfo(sh.source);
+			if (sh.type == GL_VERTEX_SHADER) {
+				sh.attribInfo = new ShaderAttribInfo(sh.source);
+			}
+
+			// Also let's parse the uniform shader too
+			sh.setUniforms(ShaderAttribInfo.parseUniforms(sh.source));
 		}
 	}
 	
@@ -353,6 +373,10 @@ public class GL2VK {
 			warn("glAttachShader: Can't attach shader that hasn't been compiled or failed compilation.");
 			return;
 		}
+		if (programs[program] == null) {
+			warn("glAttachShader: program "+program+" doesn't exist.");
+			return;
+		}
 		if (sh.type == GL_VERTEX_SHADER) {
 			programs[program].vertShaderSPIRV = shaders[shader].spirv;
 			// Of course we'll need the attrib info to our pipeline.
@@ -360,14 +384,19 @@ public class GL2VK {
 			// back gl locations.
 			// Welcome to the absolute unhinged nature of opengl.
 			programs[program].addAttribInfo(sh.attribInfo, attribIndex);
+			
 			// And then
 			// We'll need gl attribs since 
 			// gl attrib locations != vulkan attrib locations.
 			addGLAttribs(programs[program]);
+
 		}
 		else if (sh.type == GL_FRAGMENT_SHADER) {
 			programs[program].fragShaderSPIRV = shaders[shader].spirv;
 		}
+
+		// And also add the uniform attribs to the GLPipeline
+		programs[program].addUniforms(sh.uniforms);
 	}
 	
 	// Mainly just used for getting shader compilation status.
@@ -407,6 +436,14 @@ public class GL2VK {
 			changeProgram = true;
 		}
 		boundProgram = program;
+	}
+	
+	public int getUniformLocation(int program, String name) {
+		if (programs[program] == null) {
+			warn("getUniformLocation: program "+program+" doesn't exist.");
+			return -1;
+		}
+		return programs[program].getUniformLocation(name);
 	}
 	
 	public void glUniform2f(int location, float value0, float value1) {

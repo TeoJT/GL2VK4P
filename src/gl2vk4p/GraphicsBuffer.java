@@ -61,7 +61,8 @@ public class GraphicsBuffer {
     public void createBuffer(int size, int usage) {
     	// If in debug mode, just assign a dummy value
     	if (system == null) {
-    		this.stagingBuffer = (long)(Math.random()*100000.);
+    		this.bufferID = (long)(Math.random()*100000.);
+    		
     		return;
     	}
     	

@@ -1061,6 +1061,189 @@ void main() {
 		assertNotEquals(beforeBinding, bindings2.get(0));
 	}
 	
+	
+	// Let's test uniforms now!!!!
+String uniformVert_1 = """
+#version 450
+
+layout(location = 0) out vec3 fragColor;
+
+layout( push_constant ) uniform uStruct 
+{ 
+  vec2 u_pos; 
+  float u_time;
+} uni;
+
+vec2 positions[3] = vec2[](
+    vec2(0.0, -0.5),
+    vec2(0.5, 0.5),
+    vec2(-0.5, 0.5)
+);
+
+vec3 colors[3] = vec3[](
+    vec3(1.0, 0.0, 0.0),
+    vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 0.0, 1.0)
+);
+
+void main() {
+    gl_Position = vec4(positions[gl_VertexIndex]+uni.u_pos, 0.0, 1.0);
+    fragColor = colors[gl_VertexIndex]+vec3(uni.u_time);
+}
+		""";
+
+String uniformVert_throwOff = """
+#version 450
+
+layout(location = 0) out vec3 fragColor;
+
+layout( push_constant ) uniform uniform_struct 
+{ 
+  vec2 u_pos; 
+  float u_time;
+} uniforms;
+
+vec2 positions[3] = vec2[](
+    vec2(0.0, -0.5),
+    vec2(0.5, 0.5),
+    vec2(-0.5, 0.5)
+);
+
+vec3 colors[3] = vec3[](
+    vec3(1.0, 0.0, 0.0),
+    vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 0.0, 1.0)
+);
+
+void main() {
+    gl_Position = vec4(positions[gl_VertexIndex]+uniforms.u_pos, 0.0, 1.0);
+    fragColor = colors[gl_VertexIndex]+vec3(uniforms.u_time);
+}
+		""";
+
+String uniformFrag = """
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+layout(location = 0) in vec3 fragColor;
+
+layout(location = 0) out vec4 outColor;
+
+void main() {
+    outColor = vec4(fragColor, 1.0);
+}
+		""";
+
+// So creative with naming omg
+String uniformFrag_uniforms = """
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+layout( push_constant ) uniform uniform_struct 
+{ 
+  float u_brightness;
+  vec4 u_extraColor; 
+} uniforms;
+
+
+layout(location = 0) in vec3 fragColor;
+
+layout(location = 0) out vec4 outColor;
+
+void main() {
+    outColor = vec4(fragColor+vec3(uniforms.u_brightness), 1.0)+uniforms.u_extraColor;
+}
+		""";
+
+	
+	private void checkCompiled(GL2VK gl, String code) {
+		int vert1 = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+		gl.glShaderSource(vert1, code);
+		gl.glCompileShader(vert1);
+
+		IntBuffer out = IntBuffer.allocate(1);
+		gl.glGetShaderiv(vert1, GL2VK.GL_COMPILE_STATUS, out);
+		if (out.get(0) != GL2VK.GL_TRUE) {
+			System.out.println("compile_uniform_shaders:\n"+gl.glGetShaderInfoLog(vert1));
+			fail();
+		}
+	}
+
+	@Test
+	public void compile_uniform_shaders() {
+
+		GL2VK gl = new GL2VK(GL2VK.DEBUG_MODE);
+		
+		checkCompiled(gl, uniformVert_1);
+		checkCompiled(gl, uniformVert_throwOff);
+		checkCompiled(gl, uniformFrag);
+		checkCompiled(gl, uniformFrag_uniforms);
+		
+	}
+	
+	private int uniformGLProgram = 0;
+	
+	private GL2VK uniformProgram(String vertCode, String fragCode) {
+		GL2VK gl = new GL2VK(GL2VK.DEBUG_MODE);
+		uniformGLProgram = gl.glCreateProgram();
+		int vertShader = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+		int fragShader = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
+		
+		gl.glShaderSource(vertShader, vertCode);
+		gl.glShaderSource(fragShader, fragCode);
+		
+		gl.glCompileShader(vertShader);
+		gl.glCompileShader(fragShader);
+		
+		gl.glAttachShader(uniformGLProgram, vertShader);
+		gl.glAttachShader(uniformGLProgram, fragShader);
+		
+		gl.glLinkProgram(uniformGLProgram);
+		
+		return gl;
+	}
+
+	private GL2VK uniformProgram(String vertCode) {
+		return uniformProgram(vertCode, uniformFrag);
+	}
+	
+	
+	@Test
+	public void uniform_basic() {
+		GL2VK gl = uniformProgram(uniformVert_1);
+		
+		int u_pos = gl.getUniformLocation(uniformGLProgram, "u_pos");
+		int u_time = gl.getUniformLocation(uniformGLProgram, "u_time");
+		assertEquals(1, u_pos);
+		assertEquals(2, u_time);
+	}
+
+	// Try to throw off the uniform parser
+	@Test
+	public void uniform_throw_off() {
+		GL2VK gl = uniformProgram(uniformVert_throwOff);
+		
+		int u_pos = gl.getUniformLocation(uniformGLProgram, "u_pos");
+		int u_time = gl.getUniformLocation(uniformGLProgram, "u_time");
+		assertEquals(1, u_pos);
+		assertEquals(2, u_time);
+	}
+
+	@Test
+	public void uniform_vertex_fragment() {
+		GL2VK gl = uniformProgram(uniformVert_1, uniformFrag_uniforms);
+		
+		int u_pos = gl.getUniformLocation(uniformGLProgram, "u_pos");
+		int u_time = gl.getUniformLocation(uniformGLProgram, "u_time");
+		int u_brightness = gl.getUniformLocation(uniformGLProgram, "u_brightness");
+		int u_extraColor = gl.getUniformLocation(uniformGLProgram, "u_extraColor");
+		assertEquals(1, u_pos);
+		assertEquals(2, u_time);
+		assertEquals(3, u_brightness);
+		assertEquals(4, u_extraColor);
+	}
+	
+	
 	// TODO: test using crazyAttribsCode.
 	
 	// TODO: test many bindings

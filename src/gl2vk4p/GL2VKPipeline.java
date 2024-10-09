@@ -119,6 +119,8 @@ public class GL2VKPipeline {
 	private HashMap<Integer, VertexAttribsBinding> gl2vkBinding = new HashMap<Integer, VertexAttribsBinding>();
 	private HashMap<String, Integer> attribNameToGLLocation = new HashMap<String, Integer>();
 	private int[] GLLocationToVKLocation = new int[1024];
+	private HashMap<String, Integer> name2UniformLocation = new HashMap<String, Integer>();
+	public ArrayList<GLUniform> uniforms = new ArrayList<GLUniform>();
 	
 	private int boundBinding = 0;
 	private int totalVertexAttribsBindings = 0;
@@ -274,7 +276,7 @@ public class GL2VKPipeline {
             pushConstants.offset(0);
             pushConstants.size(16);
 
-		    // TODO: figure out if we're sending uniform data to the vertex shader or uniform shader.
+		    // TODO: figure out if we're sending uniform data to the vertex shader or fragment shader.
             pushConstants.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
             /////////////////////////////////////////////////////////////////////////////////
             /////////////////////////////////////////////////////////////////////////////////
@@ -440,6 +442,26 @@ public class GL2VKPipeline {
 
     public int getVKAttribLocation(int glAttribLocation) {
     	return GLLocationToVKLocation[glAttribLocation];
+    }
+    
+    public void addUniforms(ArrayList<GLUniform> uniforms) {
+        for (GLUniform uniform : uniforms) {
+        	// +1 because opengl objects start at index 1.
+        	// You'll need to remember to sub one whenever you access this
+        	// uniform arrayList.
+        	this.uniforms.add(uniform);
+        	name2UniformLocation.put(uniform.name, this.uniforms.size());
+        }
+    }
+    
+    // Remember we start from 1, not 0.
+    public GLUniform getUniform(int index) {
+    	return uniforms.get(index-1);
+    }
+    
+    public int getUniformLocation(String name) {
+    	if (!name2UniformLocation.containsKey(name)) return -1;
+    	return name2UniformLocation.get(name);
     }
     
     // Depricated but leave these in for the unit tests

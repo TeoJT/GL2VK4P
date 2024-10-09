@@ -700,7 +700,7 @@ public class VKSetup {
                 // Only if transferQueue is enabled.
                 if(useTransferQueue && queueFamilies.capacity() == 1){
 //                    indices.transferFamily = i;
-                	useTransferQueue = false;
+                	useTransferQueue = true;
                 }
 
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, i, vkwindow.surface, presentSupport);
