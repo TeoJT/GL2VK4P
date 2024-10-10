@@ -135,7 +135,6 @@ public class ShaderAttribInfo {
 
 		// Split into array of lines
 		String[] lines = shaderSource.split("\n");
-		int currUniformOffset = 0;
 		
 		ArrayList<GLUniform> uniforms = new ArrayList<GLUniform>();
 		
@@ -179,7 +178,7 @@ public class ShaderAttribInfo {
 					if (elements.length >= 2) {
 						
 						// First element should be type
-						int size = typeToSize(elements[0]);
+						int size = typeToSizeUniforms(elements[0]);
 						// If it's anything but -1 it means it's a type and hence a valid stuct value.
 						// Also lil safety check and make sure elements[1] exists
 						if (size != -1) {
@@ -190,10 +189,11 @@ public class ShaderAttribInfo {
 							// Remove ';' at the end
 							if (uniformName.charAt(uniformName.length()-1) == ';') uniformName = uniformName.substring(0, uniformName.length()-1);
 							
-							uniforms.add(new GLUniform(uniformName, size, currUniformOffset));
-							
-							
-							currUniformOffset += size;
+							// Unfortunately, we can't assign a uniform yet since the vertex and fragment
+							// uniforms need to be combined into one, and here if we try to assign an offset,
+							// currUniformOffset starts at 0 for fragment uniforms, which is incorrect.
+							uniforms.add(new GLUniform(uniformName, size));
+							// We will assign the offset later.
 						}
 					}
 					continue;
@@ -291,6 +291,30 @@ public class ShaderAttribInfo {
 	
 	private static int typeToSize(String val) {
 		if (val.equals("float")) return 1 * Float.BYTES;
+		else if (val.equals("vec2")) return 2 * Float.BYTES;
+		else if (val.equals("vec3")) return 3 * Float.BYTES;
+		else if (val.equals("vec4")) return 4 * Float.BYTES;
+		else if (val.equals("int")) return 1 * Integer.BYTES;
+		else if (val.equals("ivec2")) return 2 * Integer.BYTES;
+		else if (val.equals("ivec3")) return 3 * Integer.BYTES;
+		else if (val.equals("ivec4")) return 4 * Integer.BYTES;
+		else if (val.equals("uint")) return 1 * Integer.BYTES;
+		else if (val.equals("uvec2")) return 2 * Integer.BYTES;
+		else if (val.equals("uvec3")) return 3 * Integer.BYTES;
+		else if (val.equals("uvec4")) return 4 * Integer.BYTES;
+		else if (val.equals("bool")) return 1;
+		else if (val.equals("bvec2")) return 2;
+		else if (val.equals("bvec3")) return 3;
+		else if (val.equals("bvec4")) return 4;
+		else if (val.equals("mat2")) return 2 * 2 * Float.BYTES;
+		else if (val.equals("mat3")) return 3 * 3 * Float.BYTES;
+		else if (val.equals("mat4")) return 4 * 4 * Float.BYTES;
+		else return -1;
+	}
+	
+
+	private static int typeToSizeUniforms(String val) {
+		if (val.equals("float")) return 2 * Float.BYTES;
 		else if (val.equals("vec2")) return 2 * Float.BYTES;
 		else if (val.equals("vec3")) return 3 * Float.BYTES;
 		else if (val.equals("vec4")) return 4 * Float.BYTES;

@@ -686,7 +686,7 @@ public class VKSetup {
 
             IntBuffer presentSupport = stack.ints(VK_FALSE);
 
-            for(int i = 0;i < queueFamilies.capacity() || !indices.isComplete();i++) {
+            for(int i = 0; i < queueFamilies.capacity() || !indices.isComplete(); i++) {
 
                 if((queueFamilies.get(i).queueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
                     indices.graphicsFamily = i;
@@ -700,7 +700,7 @@ public class VKSetup {
                 // Only if transferQueue is enabled.
                 if(useTransferQueue && queueFamilies.capacity() == 1){
 //                    indices.transferFamily = i;
-                	useTransferQueue = true;
+                	useTransferQueue = false;
                 }
 
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, i, vkwindow.surface, presentSupport);

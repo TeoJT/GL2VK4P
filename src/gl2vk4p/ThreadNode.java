@@ -14,6 +14,7 @@ import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE
 import static org.lwjgl.vulkan.VK10.VK_INDEX_TYPE_UINT16;
 import static org.lwjgl.vulkan.VK10.VK_INDEX_TYPE_UINT32;
 import static org.lwjgl.vulkan.VK10.VK_SHADER_STAGE_VERTEX_BIT;
+import static org.lwjgl.vulkan.VK10.VK_SHADER_STAGE_FRAGMENT_BIT;
 import static org.lwjgl.vulkan.VkPhysicalDeviceIndexTypeUint8FeaturesKHR.INDEXTYPEUINT8;
 import static org.lwjgl.vulkan.VK10.vkCmdBindIndexBuffer;
 import static org.lwjgl.vulkan.VK10.vkAllocateCommandBuffers;
@@ -434,15 +435,17 @@ public class ThreadNode {
 	        			  threadState.set(STATE_RUNNING);
 	        			  println("CMD_PUSH_CONSTANT (index "+index+")");
 	        			  // Long0:   pipelineLayout
-	        			  // Int0:    Size/vertexOrFragment
+	        			  // Int0:    Size/offset/vertexOrFragment
 	        			  // Long1-X: bufferData (needs to be reconstructed
-	        			  
-	        			  // Get basic arguments
-	        			  // TODO: combine tis into vertexOrFragment
-	        			  int size = cmdIntArgs[0].get(index);
-	        			  int offset = 0; // No args for this yet
+
 	        			  long pipelineLayout = cmdLongArgs[0].get(index);
-	        			  
+
+	        			  // Layout: ssssssssoooooooooooooooovvvvvvvv
+	        			  int arg0 = cmdIntArgs[0].get(index);
+	        			  int size             = ((arg0 >> 24) & 0x000000FF);
+	        			  int offset           = ((arg0 >> 8) & 0x0000FFFF);
+	        			  int vertexOrFragment = (arg0 & 0x000000FF);
+	        			  	        			  
 	        			  // Needs to be in multiples of 8 for long buffer.
 	        			  // TODO: actually sort out.
 	        			  // buffer size = 12, we need to expand to 16.
@@ -465,9 +468,21 @@ public class ThreadNode {
 	        			  }
 	        			  pushConstantBuffer.rewind();
 
-	        			  // TODO: figure out if we're sending uniform data to the vertex shader or uniform shader.
-	        			  vkCmdPushConstants(cmdbuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, offset, pushConstantBuffer);
-        			      
+	        			  
+	        			  // Get the vk type
+	        			  int vkType = 0;
+	        			  if (vertexOrFragment == GLUniform.VERTEX) {
+	        				  vkType = VK_SHADER_STAGE_VERTEX_BIT;
+	        			  }
+	        			  else if (vertexOrFragment == GLUniform.FRAGMENT) {
+	        				  vkType = VK_SHADER_STAGE_FRAGMENT_BIT;
+	        			  }
+	        			  else {
+	        				  vkType = VK_SHADER_STAGE_VERTEX_BIT;
+	        			  }
+
+
+	        			  vkCmdPushConstants(cmdbuffer, pipelineLayout, vkType, offset, pushConstantBuffer);
 	        			 
 	        			  break;
 	        		  }
@@ -659,21 +674,31 @@ public class ThreadNode {
     // the literal uniform arguments e.g.
     // mat4, vec2, another vec2
     // We would need a class that contains the args we wanna pass tho.
-    public void pushConstant(long pipelineLayout, int size, ByteBuffer buffer) {
+    public void pushConstant(long pipelineLayout, int vertexOrFragment, int offset, ByteBuffer buffer) {
     	int index = getNextCMDIndex();
 		println("call CMD_PUSH_CONSTANT (index "+index+")");
 		  // Long0:   pipelineLayout
-		  // Int0:    Size/vertexOrFragment
+		  // Int0:    Size/offset/vertexOrFragment
 		  // Long1-X: bufferData (needs to be reconstructed
     	setLongArg(0, index, pipelineLayout);
-    	setIntArg(0, index, size);
+    	
+    	int size = buffer.capacity();
+
+    	// Let's combine it into a single int argument to reduce memory usage
+    	// Layout: ssssssssoooooooooooooooovvvvvvvv
+    	// Remember that none of these should ever be bigger than their limits
+    	int arg0 = 0;
+    	arg0 |= size << 24;
+    	arg0 |= ((offset << 8) & 0x00FFFF00);
+    	arg0 |= (vertexOrFragment & 0x000000FF);
+    	setIntArg(0, index, arg0);
     	
     	// Now, we need to do the unhinged:
     	// Stuff an entire buffer into the long args.
     	// If we use the entire 256 bytes of pushConstant space,
     	// we will need 32 long args altogether so it's not too bad I guess??
     	int arg = 1;
-    	for (int i = 0; i < size; i += Long.BYTES) {
+    	for (int i = 0; i < buffer.capacity(); i += Long.BYTES) {
     		setLongArg(arg++, index, buffer.getLong());
     	}
 

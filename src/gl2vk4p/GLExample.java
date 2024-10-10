@@ -181,6 +181,16 @@ public class GLExample {
 		
 		double qtime = 0d;
 
+		
+		int u_brightness = gl.getUniformLocation(program, "u_brightness");
+		int u_pos = gl.getUniformLocation(program, "u_pos");
+		int u_pos_secondary = gl.getUniformLocation(program, "u_pos_secondary");
+		
+		if (u_brightness == -1) System.out.println("UHOH u_brightness -1");
+		if (u_pos == -1) System.out.println("UHOH u_pos -1");
+		if (u_pos_secondary == -1) System.out.println("UHOH u_pos_secondary -1");
+		
+
     	while (!gl.shouldClose()) {
     		gl.beginRecord();
 
@@ -190,7 +200,11 @@ public class GLExample {
     		qtime += 0.1d;
     		
         	gl.glBindBuffer(GL2VK.GL_INDEX_BUFFER, glIndexBuff);
-    		gl.glUniform2f(0, (float)Math.sin(qtime)*0.5f, (float)Math.cos(qtime)*0.5f);
+        	
+        	gl.glUniform1f(u_brightness, (float)Math.sin(qtime*0.5f)+1f);
+    		gl.glUniform2f(u_pos, (float)Math.sin(qtime)*0.5f, (float)Math.cos(qtime)*0.5f);
+    		gl.glUniform2f(u_pos_secondary, 0, (float)Math.cos(qtime*2.238f)*0.2f);
+    		
     		gl.glDrawElements(0, 6, GL2VK.GL_UNSIGNED_SHORT, 0);
     		gl.endRecord();
     		

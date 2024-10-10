@@ -109,10 +109,14 @@ public class GL2VKPipeline {
 	
 	public SPIRV vertShaderSPIRV = null;
 	public SPIRV fragShaderSPIRV = null;
-
+	
 	// Public for use with push constants.
     public long pipelineLayout = -1;
     public long graphicsPipeline = -1;
+    
+    // We assign the offsets when we add the uniforms to the pipeline,
+    // NOT during source code parsing (check notes in the ShaderAttribInfo.parseUniforms() method)
+    private int currUniformOffset = 0;
     
 	public ShaderAttribInfo attribInfo = null;
 	
@@ -266,22 +270,55 @@ public class GL2VKPipeline {
             // ===> PIPELINE LAYOUT CREATION <===
 
             // PUSH CONSTANTS
-            // TODO
-            // TODO
-            // TODO
-            // TODO: automatically get pushconstants size from shader sources and
-            // then use getPushConstantsSizeLimit() to check if size is within the limits.
-            // If not... we'll need to halt the program and inform the programmer...
-            VkPushConstantRange.Buffer pushConstants = VkPushConstantRange.calloc(1, stack);
-            pushConstants.offset(0);
-            pushConstants.size(16);
-
-		    // TODO: figure out if we're sending uniform data to the vertex shader or fragment shader.
-            pushConstants.stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
-            /////////////////////////////////////////////////////////////////////////////////
-            /////////////////////////////////////////////////////////////////////////////////
+            int vertexSize = 0;
+            int fragmentSize = 0;
+            // Now we must compile our uniforms list into this pushConstants thing
+            // All we really need to do is set the size.
+            // TODO: the 256 byte limit might not be shared on vertex and fragment shaders
+            // which means we may be able to get away with 512 byte limit (both vertex and fragment
+            // combined)
+            for (GLUniform uni : uniforms) {
+            	if (uni.vertexFragment == GLUniform.VERTEX) {
+            		vertexSize += uni.size;
+            	}
+            	if (uni.vertexFragment == GLUniform.FRAGMENT) {
+            		fragmentSize += uni.size;
+            	}
+            }
             
+            if (vertexSize+fragmentSize > system.getPushConstantsSizeLimit()) {
+            	System.err.println("WARNING  uniform size bigger than push constant limit "+system.getPushConstantsSizeLimit()+".");
+            }
+            
+        	// Here, for each uniform, we specify a pushConstant
+            VkPushConstantRange.Buffer pushConstants = VkPushConstantRange.calloc(2, stack);
+            
+            // 0: vertex
+            pushConstants.get(0).offset(0);
+            pushConstants.get(0).size(vertexSize);
+            pushConstants.get(0).stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
 
+            // 1: vertex
+            pushConstants.get(1).offset(vertexSize);
+            pushConstants.get(1).size(fragmentSize);
+            pushConstants.get(1).stageFlags(VK_SHADER_STAGE_FRAGMENT_BIT);
+            
+            
+            // TODO: Remove
+//            for (int i = 0; i < uniforms.size(); i++) {
+//            	GLUniform uni = uniforms.get(i);
+//                pushConstants.get(i).offset(uni.offset);
+//                pushConstants.get(i).size(uni.size);
+//                pushConstants.get(i).stageFlags(uni.getVkType());
+//                
+//                System.out.println("Offset: "+uni.offset);
+//                System.out.println("Size: "+uni.size);
+//                System.out.println("Type: "+uni.getVkType());
+//            }
+            
+            
+            
+            // Now pipeline layout info (only 1)
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
             pipelineLayoutInfo.pPushConstantRanges(pushConstants);
@@ -293,6 +330,11 @@ public class GL2VKPipeline {
             }
 
             pipelineLayout = pPipelineLayout.get(0);
+
+            /////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////
+            
+
 
             VkGraphicsPipelineCreateInfo.Buffer pipelineInfo = VkGraphicsPipelineCreateInfo.calloc(1, stack);
             pipelineInfo.sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
@@ -446,6 +488,10 @@ public class GL2VKPipeline {
     
     public void addUniforms(ArrayList<GLUniform> uniforms) {
         for (GLUniform uniform : uniforms) {
+        	// Assign offset to the uniform
+        	uniform.offset = currUniformOffset;
+        	currUniformOffset += uniform.size;
+        	
         	// +1 because opengl objects start at index 1.
         	// You'll need to remember to sub one whenever you access this
         	// uniform arrayList.

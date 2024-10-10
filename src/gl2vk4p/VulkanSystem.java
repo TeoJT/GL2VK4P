@@ -550,8 +550,8 @@ public class VulkanSystem {
     	threadNodes[selectedNode].drawIndexed(indiciesSize, indiciesBuffer, vertexBuffers, offset, type);
     }
     
-    public void nodePushConstants(long pipelineLayout, int size, ByteBuffer buffer) {
-    	threadNodes[selectedNode].pushConstant(pipelineLayout, size, buffer);
+    public void nodePushConstants(long pipelineLayout, int vertexOfFragment, int offset, ByteBuffer buffer) {
+    	threadNodes[selectedNode].pushConstant(pipelineLayout, vertexOfFragment, offset, buffer); // TODO
     }
     
     /////////////////////////////////////////////////

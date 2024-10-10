@@ -445,17 +445,39 @@ public class GL2VK {
 		}
 		return programs[program].getUniformLocation(name);
 	}
+
 	
-	public void glUniform2f(int location, float value0, float value1) {
+	public void glUniform1f(int location, float value0) {
 		if (checkAndPrepareProgram() == false) return;
 		
-		int size = 16;
+		GLUniform uniform = programs[boundProgram].getUniform(location);
+		
+		int size = 8;
+		ByteBuffer buffer = ByteBuffer.allocate(size);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		buffer.putFloat(value0);
+		buffer.rewind();
+		
+		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, buffer);
+	}
+	
+	public void glUniform2f(int location, float value0, float value1) {
+		if (programs[boundProgram] == null) {
+			warn("glAttachShader: program "+boundProgram+" doesn't exist.");
+			return;
+		}
+		if (checkAndPrepareProgram() == false) return;
+		
+		GLUniform uniform = programs[boundProgram].getUniform(location);
+		
+		int size = 8;
 		ByteBuffer buffer = ByteBuffer.allocate(size);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 		buffer.putFloat(value0);
 		buffer.putFloat(value1);
 		buffer.rewind();
-		system.nodePushConstants(programs[boundProgram].pipelineLayout, size, buffer);
+		
+		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, buffer);
 	}
 	
 	
