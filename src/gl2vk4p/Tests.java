@@ -1141,7 +1141,7 @@ String uniformFrag_uniforms = """
 
 layout( push_constant ) uniform uniform_struct 
 { 
-  float u_brightness;
+  layout(offset=16) float u_brightness;
   vec4 u_extraColor; 
 } uniforms;
 
@@ -1243,9 +1243,21 @@ void main() {
 		assertEquals(4, u_extraColor);
 	}
 	
+	@Test
+	public void roundToMultiple8_tests() {
+		assertEquals(24, Util.roundToMultiple8(22));
+		assertEquals(16, Util.roundToMultiple8(15));
+		assertEquals(128, Util.roundToMultiple8(121));
+		assertEquals(64, Util.roundToMultiple8(60));
+		assertEquals(32, Util.roundToMultiple8(32));
+	}
+	
 	
 	// TODO: test using crazyAttribsCode.
 	
 	// TODO: test many bindings
 	// with a glprogram with many bindings.
+	
+	// TODO: Test source code with comments that have keywords like
+	// vec3 and mat4.
 }

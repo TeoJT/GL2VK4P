@@ -66,4 +66,13 @@ public class Util {
 				(us > 1000000 ? " ("+(us/1000000L)+"s)" : "")
 		);
 	}
+	
+	public static int roundToMultiple8(int input) {
+		// let's say we have 22
+		// return 24
+		int m = 8;
+		int mod = (input%m);
+		if (mod == 0) return input;
+		return input+(m-mod);
+	}
 }

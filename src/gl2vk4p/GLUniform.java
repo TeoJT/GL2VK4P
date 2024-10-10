@@ -9,8 +9,8 @@ public class GLUniform {
 	public static final int FRAGMENT = 2;
 	
 	public String name;
-	public int size = 0;
-	public int offset = 0;
+	public int size = -1;
+	public int offset = -1;
 	// Vertex or fragment
 	public int vertexFragment = 0;
 	

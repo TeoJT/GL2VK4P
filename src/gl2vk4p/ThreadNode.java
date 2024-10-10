@@ -463,8 +463,19 @@ public class ThreadNode {
 	        			  // Now we have to reconstruct the buffer from the longs
 	        			  pushConstantBuffer.rewind();
 	        			  int arg = 1;
-	        			  for (int i = 0; i < size; i += Long.BYTES) {
+	        			  
+	        			  // Long story short, we might store 8 bytes in a 4-byte buffer, 
+	        			  // which would cause an exception.
+	        			  // We have a special case to write the bytes in multiples of 8,
+	        			  // then write the remaining 4 bytes
+	        			  int ssize = size;
+	        			  if (size % 8 == 4) ssize -= 4;
+	        			  for (int i = 0; i < ssize; i += Long.BYTES) {
 	        				  pushConstantBuffer.putLong(cmdLongArgs[arg++].get(index));
+	        			  }
+	        			  if (size % 8 == 4) {
+	        				  int val = (int)cmdLongArgs[arg++].get(index);
+	        				  pushConstantBuffer.putInt(val);
 	        			  }
 	        			  pushConstantBuffer.rewind();
 
@@ -480,7 +491,6 @@ public class ThreadNode {
 	        			  else {
 	        				  vkType = VK_SHADER_STAGE_VERTEX_BIT;
 	        			  }
-
 
 	        			  vkCmdPushConstants(cmdbuffer, pipelineLayout, vkType, offset, pushConstantBuffer);
 	        			 
@@ -698,10 +708,69 @@ public class ThreadNode {
     	// If we use the entire 256 bytes of pushConstant space,
     	// we will need 32 long args altogether so it's not too bad I guess??
     	int arg = 1;
-    	for (int i = 0; i < buffer.capacity(); i += Long.BYTES) {
+    	for (int i = 0; i < size; i += Long.BYTES) {
     		setLongArg(arg++, index, buffer.getLong());
     	}
 
+        cmdID.set(index, CMD_PUSH_CONSTANT);
+        wakeThread(index);
+    }
+    
+    private int pushConstant(long pipelineLayout, int vertexOrFragment, int offset, int size) {
+    	int index = getNextCMDIndex();
+    	
+    	println("call CMD_PUSH_CONSTANT (index "+index+")");
+		  // Long0:   pipelineLayout
+		  // Int0:    Size/offset/vertexOrFragment
+		  // Long1-X: bufferData (needs to be reconstructed
+	  	setLongArg(0, index, pipelineLayout);
+	
+	  	// Let's combine it into a single int argument to reduce memory usage
+	  	// Layout: ssssssssoooooooooooooooovvvvvvvv
+	  	// Remember that none of these should ever be bigger than their limits
+	  	int arg0 = 0;
+	  	arg0 |= size << 24;
+	  	arg0 |= ((offset << 8) & 0x00FFFF00);
+	  	arg0 |= (vertexOrFragment & 0x000000FF);
+	  	setIntArg(0, index, arg0);
+	  	
+	  	return index;
+    }
+    
+    public void pushConstant(long pipelineLayout, int vertexOrFragment, int offset, float val) {
+		int index = pushConstant(pipelineLayout, vertexOrFragment, offset, 4);
+
+		setLongArg(1, index, Float.floatToIntBits(val) & 0xFFFFFFFFL);
+		
+        cmdID.set(index, CMD_PUSH_CONSTANT);
+        wakeThread(index);
+    }
+
+    public void pushConstant(long pipelineLayout, int vertexOrFragment, int offset, float val0, float val1) {
+		int index = pushConstant(pipelineLayout, vertexOrFragment, offset, 8);
+
+		setLongArg(1, index, (Float.floatToIntBits(val0) & 0xFFFFFFFFL) | ((Float.floatToIntBits(val1) & 0xFFFFFFFFL) << 32));
+		
+        cmdID.set(index, CMD_PUSH_CONSTANT);
+        wakeThread(index);
+    }
+
+    public void pushConstant(long pipelineLayout, int vertexOrFragment, int offset, float val0, float val1, float val2) {
+		int index = pushConstant(pipelineLayout, vertexOrFragment, offset, 12);
+
+		setLongArg(1, index, (Float.floatToIntBits(val0) & 0xFFFFFFFFL) | ((Float.floatToIntBits(val1) & 0xFFFFFFFFL) << 32));
+		setLongArg(2, index, (Float.floatToIntBits(val2) & 0xFFFFFFFFL));
+		
+        cmdID.set(index, CMD_PUSH_CONSTANT);
+        wakeThread(index);
+    }
+
+    public void pushConstant(long pipelineLayout, int vertexOrFragment, int offset, float val0, float val1, float val2, float val3) {
+		int index = pushConstant(pipelineLayout, vertexOrFragment, offset, 16);
+
+		setLongArg(1, index, (Float.floatToIntBits(val0) & 0xFFFFFFFFL) | ((Float.floatToIntBits(val1) & 0xFFFFFFFFL) << 32));
+		setLongArg(2, index, (Float.floatToIntBits(val2) & 0xFFFFFFFFL) | ((Float.floatToIntBits(val3) & 0xFFFFFFFFL) << 32));
+		
         cmdID.set(index, CMD_PUSH_CONSTANT);
         wakeThread(index);
     }

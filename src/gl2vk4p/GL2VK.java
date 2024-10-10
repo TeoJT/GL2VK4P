@@ -346,7 +346,7 @@ public class GL2VK {
 			}
 
 			// Also let's parse the uniform shader too
-			sh.setUniforms(ShaderAttribInfo.parseUniforms(sh.source));
+			sh.setUniforms(UniformParser.parseUniforms(sh.source));
 		}
 	}
 	
@@ -452,33 +452,38 @@ public class GL2VK {
 		
 		GLUniform uniform = programs[boundProgram].getUniform(location);
 		
-		int size = 8;
-		ByteBuffer buffer = ByteBuffer.allocate(size);
-		buffer.order(ByteOrder.LITTLE_ENDIAN);
-		buffer.putFloat(value0);
-		buffer.rewind();
 		
-		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, buffer);
+		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, value0);
 	}
+
 	
 	public void glUniform2f(int location, float value0, float value1) {
-		if (programs[boundProgram] == null) {
-			warn("glAttachShader: program "+boundProgram+" doesn't exist.");
-			return;
-		}
 		if (checkAndPrepareProgram() == false) return;
 		
 		GLUniform uniform = programs[boundProgram].getUniform(location);
 		
-		int size = 8;
-		ByteBuffer buffer = ByteBuffer.allocate(size);
-		buffer.order(ByteOrder.LITTLE_ENDIAN);
-		buffer.putFloat(value0);
-		buffer.putFloat(value1);
-		buffer.rewind();
 		
-		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, buffer);
+		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, value0, value1);
 	}
+	
+//	public void glUniform2f(int location, float value0, float value1) {
+//		if (programs[boundProgram] == null) {
+//			warn("glAttachShader: program "+boundProgram+" doesn't exist.");
+//			return;
+//		}
+//		if (checkAndPrepareProgram() == false) return;
+//		
+//		GLUniform uniform = programs[boundProgram].getUniform(location);
+//		
+//		int size = 8;
+//		ByteBuffer buffer = ByteBuffer.allocate(size);
+//		buffer.order(ByteOrder.LITTLE_ENDIAN);
+//		buffer.putFloat(value0);
+//		buffer.putFloat(value1);
+//		buffer.rewind();
+//		
+//		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, buffer);
+//	}
 	
 	
 

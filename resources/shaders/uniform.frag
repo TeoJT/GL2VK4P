@@ -3,7 +3,8 @@
 
 layout( push_constant ) uniform u_pos_struct 
 { 
-  float u_brightness;
+  layout(offset=32) float extra_red;  
+  float u_brightness;  
 } uni;
 
 layout(location = 0) in vec3 fragColor;
@@ -11,5 +12,5 @@ layout(location = 0) in vec3 fragColor;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = vec4(fragColor*vec3(uni.u_brightness), 1.0);
+    outColor = vec4(fragColor+vec3(uni.u_brightness+uni.extra_red, uni.u_brightness, uni.u_brightness), 1.0);
 }

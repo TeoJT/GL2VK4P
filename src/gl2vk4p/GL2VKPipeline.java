@@ -272,36 +272,56 @@ public class GL2VKPipeline {
             // PUSH CONSTANTS
             int vertexSize = 0;
             int fragmentSize = 0;
+            
+            // Need these just in case the offset is set to something stupidly high
+            int maxOffsettedSizeVertex = 0;
+            int maxOffsettedSizeFragment = 0;
             // Now we must compile our uniforms list into this pushConstants thing
             // All we really need to do is set the size.
-            // TODO: the 256 byte limit might not be shared on vertex and fragment shaders
-            // which means we may be able to get away with 512 byte limit (both vertex and fragment
-            // combined)
             for (GLUniform uni : uniforms) {
             	if (uni.vertexFragment == GLUniform.VERTEX) {
             		vertexSize += uni.size;
+            		if (uni.offset+uni.size > maxOffsettedSizeVertex) 
+            			maxOffsettedSizeVertex = uni.offset+uni.size;
             	}
             	if (uni.vertexFragment == GLUniform.FRAGMENT) {
             		fragmentSize += uni.size;
+            		if (uni.offset+uni.size > maxOffsettedSizeFragment) 
+            			maxOffsettedSizeFragment = uni.offset+uni.size;
             	}
             }
+            
+            if (maxOffsettedSizeVertex > vertexSize) vertexSize = maxOffsettedSizeVertex;
+            if (maxOffsettedSizeFragment > fragmentSize) fragmentSize = maxOffsettedSizeFragment;
+            
+            
+//            vertexSize = Util.roundToMultiple8(vertexSize);
+            
             
             if (vertexSize+fragmentSize > system.getPushConstantsSizeLimit()) {
             	System.err.println("WARNING  uniform size bigger than push constant limit "+system.getPushConstantsSizeLimit()+".");
             }
             
         	// Here, for each uniform, we specify a pushConstant
-            VkPushConstantRange.Buffer pushConstants = VkPushConstantRange.calloc(2, stack);
+            int numBlocks = 0;
+            if (vertexSize > 0) numBlocks++;
+            if (fragmentSize > 0) numBlocks++;
+            VkPushConstantRange.Buffer pushConstants = VkPushConstantRange.calloc(numBlocks, stack);
             
             // 0: vertex
-            pushConstants.get(0).offset(0);
-            pushConstants.get(0).size(vertexSize);
-            pushConstants.get(0).stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
+            if (vertexSize > 0) {
+	            pushConstants.get(0).offset(0);
+	            pushConstants.get(0).size(vertexSize);
+	            pushConstants.get(0).stageFlags(VK_SHADER_STAGE_VERTEX_BIT);
+            }
 
-            // 1: vertex
-            pushConstants.get(1).offset(vertexSize);
-            pushConstants.get(1).size(fragmentSize);
-            pushConstants.get(1).stageFlags(VK_SHADER_STAGE_FRAGMENT_BIT);
+            // No fragment variables? Forget about push constants
+            // 1: fragment
+            if (fragmentSize > 0) {
+	            pushConstants.get(1).offset(vertexSize);
+	            pushConstants.get(1).size(fragmentSize);
+	            pushConstants.get(1).stageFlags(VK_SHADER_STAGE_FRAGMENT_BIT);
+            }
             
             
             // TODO: Remove
@@ -321,7 +341,10 @@ public class GL2VKPipeline {
             // Now pipeline layout info (only 1)
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkPipelineLayoutCreateInfo.calloc(stack);
             pipelineLayoutInfo.sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-            pipelineLayoutInfo.pPushConstantRanges(pushConstants);
+            
+            if (numBlocks > 0) {
+            	pipelineLayoutInfo.pPushConstantRanges(pushConstants);
+            }
 
             LongBuffer pPipelineLayout = stack.longs(VK_NULL_HANDLE);
 
@@ -489,8 +512,16 @@ public class GL2VKPipeline {
     public void addUniforms(ArrayList<GLUniform> uniforms) {
         for (GLUniform uniform : uniforms) {
         	// Assign offset to the uniform
-        	uniform.offset = currUniformOffset;
+        	// But only if it hasn't been manually assigned already
+        	// (via the layout(offset=...) token in the shader).
+        	if (uniform.offset == -1) {
+	        	uniform.offset = currUniformOffset;
+        	}
+        	else {
+        		currUniformOffset = uniform.offset;
+        	}
         	currUniformOffset += uniform.size;
+        	
         	
         	// +1 because opengl objects start at index 1.
         	// You'll need to remember to sub one whenever you access this
