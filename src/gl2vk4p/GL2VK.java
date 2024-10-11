@@ -302,8 +302,15 @@ public class GL2VK {
 		shaders[shader] = null;
 	}
 	
-	// This is simple stuff to understand (i hope)
+
 	public void glCompileShader(int shader) {
+		// Convert the shader to openGL
+		
+		glCompileVKShader(shader);
+	}
+	
+	// This is simple stuff to understand (i hope)
+	public void glCompileVKShader(int shader) {
 		GLShader sh = shaders[shader];
 		if (sh == null) {
 			warn("glCompileShader: shader "+shader+" doesn't exist.");

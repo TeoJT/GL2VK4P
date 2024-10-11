@@ -76,10 +76,11 @@ public class UniformParser {
 							// Time to assign our variable.
 							if (size != -1 && i+1 < elements.length) {
 								// Next element should be name
-								String uniformName = elements[i+1];
+								String uniformName = removeSemicolon(elements[i+1]);
+								
+								System.out.println(uniformName);
 								
 								// Remove ';' at the end
-								if (uniformName.charAt(uniformName.length()-1) == ';') uniformName = uniformName.substring(0, uniformName.length()-1);
 								
 								// Unfortunately, we can't assign a uniform yet since the vertex and fragment
 								// uniforms need to be combined into one, and here if we try to assign an offset,
@@ -169,8 +170,13 @@ public class UniformParser {
 	private static int countChars(String line, String c) {
 		return line.length() - line.replace(c, "").length();
 	}
+	
+	public static String removeSemicolon(String line) {
+		if (line.charAt(line.length()-1) == ';') line = line.substring(0, line.length()-1);
+		return line;
+	}
 
-	private static int typeToSize(String val) {
+	public static int typeToSize(String val) {
 		if (val.equals("float")) return 1 * Float.BYTES;
 		else if (val.equals("vec2")) return 2 * Float.BYTES;
 		else if (val.equals("vec3")) return 3 * Float.BYTES;
@@ -193,7 +199,7 @@ public class UniformParser {
 		else return -1;
 	}
 	
-	private static boolean hasType(String val) {
+	public static boolean hasType(String val) {
 		if (val.contains("float")) return true;
 		else if (val.contains("vec2")) return true;
 		else if (val.contains("vec3")) return true;

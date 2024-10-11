@@ -313,8 +313,8 @@ void main() {
 		gl.glShaderSource(vertShader1, vertSource1);
 		gl.glShaderSource(fragShader1, fragSource1);
 		
-		gl.glCompileShader(vertShader1);
-		gl.glCompileShader(fragShader1);
+		gl.glCompileVKShader(vertShader1);
+		gl.glCompileVKShader(fragShader1);
 		
 		gl.glAttachShader(glProgram1, vertShader1);
 		gl.glAttachShader(glProgram1, fragShader1);
@@ -345,7 +345,7 @@ void main() {
 		
 		gl.glShaderSource(failShader, weirdCode);
 		
-		gl.glCompileShader(failShader);
+		gl.glCompileVKShader(failShader);
 		
 		return gl;
 	}
@@ -445,8 +445,8 @@ void main() {
 		gl.glShaderSource(vertShaderX, vertSource2);
 		gl.glShaderSource(fragShaderX, fragSource2);
 		
-		gl.glCompileShader(vertShaderX);
-		gl.glCompileShader(fragShaderX);
+		gl.glCompileVKShader(vertShaderX);
+		gl.glCompileVKShader(fragShaderX);
 
 		IntBuffer out1 = IntBuffer.allocate(1);
 		gl.glGetShaderiv(vertShaderX, GL2VK.GL_COMPILE_STATUS, out1);
@@ -476,8 +476,8 @@ void main() {
 		gl.glShaderSource(fragShaderX, fragSource1);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderX);
-		gl.glCompileShader(fragShaderX);
+		gl.glCompileVKShader(vertShaderX);
+		gl.glCompileVKShader(fragShaderX);
 		
 		// attach to program X
 		gl.glAttachShader(programX, vertShaderX);
@@ -505,8 +505,8 @@ void main() {
 		gl.glShaderSource(fragShaderY, fragSource2);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderY);
-		gl.glCompileShader(fragShaderY);
+		gl.glCompileVKShader(vertShaderY);
+		gl.glCompileVKShader(fragShaderY);
 		
 		// attach to program X
 		gl.glAttachShader(programY, vertShaderY);
@@ -558,8 +558,8 @@ void main() {
 		gl.glShaderSource(fragShaderX, fragSource1);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderX);
-		gl.glCompileShader(fragShaderX);
+		gl.glCompileVKShader(vertShaderX);
+		gl.glCompileVKShader(fragShaderX);
 		
 		// attach to program X
 		gl.glAttachShader(programX, vertShaderX);
@@ -586,8 +586,8 @@ void main() {
 		gl.glShaderSource(fragShaderY, fragSource2);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderY);
-		gl.glCompileShader(fragShaderY);
+		gl.glCompileVKShader(vertShaderY);
+		gl.glCompileVKShader(fragShaderY);
 		
 		// attach to program X
 		gl.glAttachShader(programY, vertShaderY);
@@ -645,10 +645,10 @@ void main() {
 		gl.glShaderSource(fragShaderY, fragSource2);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderX);
-		gl.glCompileShader(vertShaderY);
-		gl.glCompileShader(fragShaderX);
-		gl.glCompileShader(fragShaderY);
+		gl.glCompileVKShader(vertShaderX);
+		gl.glCompileVKShader(vertShaderY);
+		gl.glCompileVKShader(fragShaderX);
+		gl.glCompileVKShader(fragShaderY);
 		
 		// attach to program X
 		gl.glAttachShader(programX, vertShaderX);
@@ -713,10 +713,10 @@ void main() {
 		gl.glShaderSource(fragShaderY, fragSource2);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderX);
-		gl.glCompileShader(vertShaderY);
-		gl.glCompileShader(fragShaderX);
-		gl.glCompileShader(fragShaderY);
+		gl.glCompileVKShader(vertShaderX);
+		gl.glCompileVKShader(vertShaderY);
+		gl.glCompileVKShader(fragShaderX);
+		gl.glCompileVKShader(fragShaderY);
 		
 		// attach to program X
 		gl.glAttachShader(programX, vertShaderX);
@@ -759,8 +759,8 @@ void main() {
 		gl.glShaderSource(fragShaderX, fragSource1);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderX);
-		gl.glCompileShader(fragShaderX);
+		gl.glCompileVKShader(vertShaderX);
+		gl.glCompileVKShader(fragShaderX);
 		
 		// attach to program X
 		gl.glAttachShader(programX, vertShaderX);
@@ -788,8 +788,8 @@ void main() {
 		gl.glShaderSource(fragShaderY, fragSource2);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderY);
-		gl.glCompileShader(fragShaderY);
+		gl.glCompileVKShader(vertShaderY);
+		gl.glCompileVKShader(fragShaderY);
 		
 		// attach to program X
 		gl.glAttachShader(programY, vertShaderY);
@@ -840,10 +840,10 @@ void main() {
 		gl.glShaderSource(fragShaderY, fragSource2);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderX);
-		gl.glCompileShader(vertShaderY);
-		gl.glCompileShader(fragShaderX);
-		gl.glCompileShader(fragShaderY);
+		gl.glCompileVKShader(vertShaderX);
+		gl.glCompileVKShader(vertShaderY);
+		gl.glCompileVKShader(fragShaderX);
+		gl.glCompileVKShader(fragShaderY);
 		
 		// attach to program X
 		gl.glAttachShader(programX, vertShaderX);
@@ -913,10 +913,10 @@ void main() {
 		gl.glShaderSource(fragShaderY, fragSource2);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderX);
-		gl.glCompileShader(vertShaderY);
-		gl.glCompileShader(fragShaderX);
-		gl.glCompileShader(fragShaderY);
+		gl.glCompileVKShader(vertShaderX);
+		gl.glCompileVKShader(vertShaderY);
+		gl.glCompileVKShader(fragShaderX);
+		gl.glCompileVKShader(fragShaderY);
 		
 		// attach to program X
 		gl.glAttachShader(programX, vertShaderX);
@@ -983,10 +983,10 @@ void main() {
 		gl.glShaderSource(fragShaderY, fragSource1);
 		
 		// Compile shaders X
-		gl.glCompileShader(vertShaderX);
-		gl.glCompileShader(vertShaderY);
-		gl.glCompileShader(fragShaderX);
-		gl.glCompileShader(fragShaderY);
+		gl.glCompileVKShader(vertShaderX);
+		gl.glCompileVKShader(vertShaderY);
+		gl.glCompileVKShader(fragShaderX);
+		gl.glCompileVKShader(fragShaderY);
 		
 		// attach to program X
 		gl.glAttachShader(programX, vertShaderX);
@@ -1141,7 +1141,7 @@ String uniformFrag_uniforms = """
 
 layout( push_constant ) uniform uniform_struct 
 { 
-  layout(offset=16) float u_brightness;
+  layout(offset=12) float u_brightness;
   vec4 u_extraColor; 
 } uniforms;
 
@@ -1156,10 +1156,23 @@ void main() {
 		""";
 
 	
-	private void checkCompiled(GL2VK gl, String code) {
+	private void checkCompiledVertex(GL2VK gl, String code) {
 		int vert1 = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
 		gl.glShaderSource(vert1, code);
-		gl.glCompileShader(vert1);
+		gl.glCompileVKShader(vert1);
+
+		IntBuffer out = IntBuffer.allocate(1);
+		gl.glGetShaderiv(vert1, GL2VK.GL_COMPILE_STATUS, out);
+		if (out.get(0) != GL2VK.GL_TRUE) {
+			System.out.println("compile_uniform_shaders:\n"+gl.glGetShaderInfoLog(vert1));
+			fail();
+		}
+	}
+	
+	private void checkCompiledFragment(GL2VK gl, String code) {
+		int vert1 = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
+		gl.glShaderSource(vert1, code);
+		gl.glCompileVKShader(vert1);
 
 		IntBuffer out = IntBuffer.allocate(1);
 		gl.glGetShaderiv(vert1, GL2VK.GL_COMPILE_STATUS, out);
@@ -1174,10 +1187,10 @@ void main() {
 
 		GL2VK gl = new GL2VK(GL2VK.DEBUG_MODE);
 		
-		checkCompiled(gl, uniformVert_1);
-		checkCompiled(gl, uniformVert_throwOff);
-		checkCompiled(gl, uniformFrag);
-		checkCompiled(gl, uniformFrag_uniforms);
+		checkCompiledVertex(gl, uniformVert_1);
+		checkCompiledVertex(gl, uniformVert_throwOff);
+		checkCompiledFragment(gl, uniformFrag);
+		checkCompiledFragment(gl, uniformFrag_uniforms);
 		
 	}
 	
@@ -1192,8 +1205,8 @@ void main() {
 		gl.glShaderSource(vertShader, vertCode);
 		gl.glShaderSource(fragShader, fragCode);
 		
-		gl.glCompileShader(vertShader);
-		gl.glCompileShader(fragShader);
+		gl.glCompileVKShader(vertShader);
+		gl.glCompileVKShader(fragShader);
 		
 		gl.glAttachShader(uniformGLProgram, vertShader);
 		gl.glAttachShader(uniformGLProgram, fragShader);
@@ -1250,6 +1263,408 @@ void main() {
 		assertEquals(128, Util.roundToMultiple8(121));
 		assertEquals(64, Util.roundToMultiple8(60));
 		assertEquals(32, Util.roundToMultiple8(32));
+	}
+	
+	@Test
+	public void converted_shaders_compile_test() {
+		GL2VK gl = new GL2VK(GL2VK.DEBUG_MODE);
+    	
+    	// Shader source
+    	checkCompiledVertex(gl, Util.readFile("resources/shaders/vkversion/ColorVert.glsl"));
+    	checkCompiledFragment(gl, Util.readFile("resources/shaders/vkversion/ColorFrag.glsl"));
+    	
+	}
+	
+	
+	
+	@Test
+	public void remove_comments() {
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+		String code = 
+				"""
+#version 450
+// Blah blah blah
+layout(location = 0) in vec2 inPosition;// position variable
+layout(location = 1) in vec3 inColor;// Color variable
+
+// Woah look varying
+layout(location = 0) out vec3 fragColor;
+
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);// Lalalalala
+fragColor = inColor;// Cool
+}
+				""";
+		
+		String result = converter.removeComments(code).trim().replaceAll(" ", "");
+		
+		String expected =
+				"""
+#version 450
+
+layout(location = 0) in vec2 inPosition;
+layout(location = 1) in vec3 inColor;
+
+
+layout(location = 0) out vec3 fragColor;
+
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+
+				""".trim().replaceAll(" ", "");
+		
+		if (!result.equals(expected)) {
+			System.out.println("remove_comments actual result: ");
+			System.out.println(result);
+			System.out.println("\nremove_comments expected: ");
+			System.out.println(expected);
+			fail();
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	@Test
+	public void append_version() {
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		String code = 
+				"""
+// Hello look at this source code
+
+void main() {
+// I've deliberately cut out some variables so this won't compile lol
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+				""";
+
+		String expected = 
+				"""
+#version 450
+
+void main() {
+
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+				""".trim().replaceAll(" ", "").replaceAll("\n", "");
+		
+		// Let's test removeComments again shall we?
+		code = converter.removeComments(code);
+		code = converter.appendVersion(code).trim().replaceAll(" ", "").replaceAll("\n", "");
+
+		if (!code.equals(expected)) {
+			System.out.println("append_version actual result: ");
+			System.out.println(code);
+			System.out.println("\nappend_version expected: ");
+			System.out.println(expected);
+			fail();
+		}
+	}
+	
+	
+	
+	
+	@Test
+	public void attribute_to_in() {
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		String code = 
+				"""
+
+attribute vec2 inPosition;
+attribute vec3 inColor;
+
+
+layout(location = 0) out vec3 fragColor;
+
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;// Cool
+}
+				""";
+		
+		code = converter.removeComments(code);
+		code = converter.appendVersion(code);
+		code = converter.attribute2In(code);
+		
+		String expected =
+				"""
+#version 450
+
+layout(location = 0) in vec2 inPosition;
+layout(location = 1) in vec3 inColor;
+
+
+layout(location = 0) out vec3 fragColor;
+
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+
+				""";
+		
+		if (!code.trim().replaceAll(" ", "").equals(expected.trim().replaceAll(" ", ""))) {
+			System.out.println("attribute_to_in actual result: ");
+			System.out.println(code);
+			System.out.println("\nattribute_to_in expected: ");
+			System.out.println(expected);
+			fail();
+		}
+	}
+	
+
+	@Test
+	public void varying_to_out() {
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		String code = 
+				"""
+
+varying vec3 fragColor;
+varying vec2 texUv;
+
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+				""";
+		
+		code = converter.removeComments(code);
+		code = converter.appendVersion(code);
+		code = converter.attribute2In(code);
+		code = converter.varying2Out(code);
+		
+		String expected =
+				"""
+#version 450
+
+layout(location = 0) out vec3 fragColor;
+layout(location = 1) out vec2 texUv;
+
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+
+				""";
+		
+		if (!code.trim().replaceAll(" ", "").equals(expected.trim().replaceAll(" ", ""))) {
+			System.out.println("varying_to_out actual result: ");
+			System.out.println(code);
+			System.out.println("\nvarying_to_out expected: ");
+			System.out.println(expected);
+			fail();
+		}
+		
+		assertEquals(0, converter.vertexVaryingLocations.get("fragColor"));
+		assertEquals(1, converter.vertexVaryingLocations.get("texUv"));
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void varying_to_in() {
+		// First we need the vertex cache
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		String vertex = 
+				"""
+
+varying vec3 fragColor;
+varying vec2 texUv;
+
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+				""";
+		
+		converter.varying2Out(vertex);
+		
+		// Now for the actual test
+		String code = 
+				"""
+
+varying vec3 fragColor;
+varying vec2 texUv;
+
+void main() {
+  gl_FragColor = fragColor;
+}
+				""";
+		
+		code = converter.removeComments(code);
+		code = converter.appendVersion(code);
+		code = converter.attribute2In(code);
+		code = converter.varying2In(code);
+		
+		String expected =
+				"""
+#version 450
+
+layout(location = 0) in vec3 fragColor;
+layout(location = 1) in vec2 texUv;
+
+void main() {
+  gl_FragColor = fragColor;
+}
+				""";
+		
+		if (!code.trim().replaceAll(" ", "").equals(expected.trim().replaceAll(" ", ""))) {
+			System.out.println("varying_to_in actual result: ");
+			System.out.println(code);
+			System.out.println("\nvarying_to_in expected: ");
+			System.out.println(expected);
+			fail();
+		}
+	}
+	
+	
+	
+	
+	
+	// Expect a thrown exception because we did not convert a vertex shader.
+	@Test
+	public void varying_to_in_novertex() {
+		// First we need the vertex cache
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+		// Now for the actual test
+		String code = 
+				"""
+
+varying vec3 fragColor;
+varying vec2 texUv;
+
+void main() {
+  gl_FragColor = fragColor;
+}
+				""";
+		
+		code = converter.removeComments(code);
+		code = converter.appendVersion(code);
+		code = converter.attribute2In(code);
+		
+		try {
+			converter.varying2In(code);
+			fail();
+		}
+		catch (RuntimeException e) {
+			// Expect exception
+		}
+	}
+	
+	
+	@Test
+	public void uniforms_into_block() {
+		// First we need the vertex cache
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+		// Now for the actual test
+		String code = 
+				"""
+uniform mat4 modelviewMatrix;
+uniform mat4 transformMatrix;
+uniform mat3 normalMatrix;
+
+uniform int lightCount;
+				
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+				""";
+		
+		code = converter.convertUniforms(code, 1);
+		code = converter.appendVersion(code);
+		
+		String expected = 
+				"""
+#version 450
+layout( push_constant ) uniform gltovkuniforms_struct {
+    mat4 modelviewMatrix;
+    mat4 transformMatrix;
+    mat3 normalMatrix;
+    int lightCount;
+} gltovkuniforms;
+
+				
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+				""";
+
+		if (!code.trim().replaceAll("\n", "").replaceAll(" ", "").equals(expected.trim().replaceAll("\n", "").replaceAll(" ", ""))) {
+			System.out.println("uniforms_into_block actual result: ");
+			System.out.println(code);
+			System.out.println("\nuniforms_into_block expected: ");
+			System.out.println(expected);
+			fail();
+		}
+	}
+	
+	
+	
+	@Test
+	public void uniform_conversion() {
+		// First we need the vertex cache
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+		// Now for the actual test
+		String code = 
+				"""
+uniform vec2 u_pos;
+uniform vec2 u_pos_secondary;
+uniform float u_r;
+uniform float u_g;
+uniform float u_b;
+
+void main() {
+    gl_Position = vec4(inPosition+u_pos+u_pos_secondary, 0.0, 1.0);
+    fragColor = inColor*vec3(u_r, u_g, u_b);
+}
+				""";
+		
+		code = converter.convertUniforms(code, 1);
+		code = converter.appendVersion(code);
+		
+		String expected = 
+				"""
+#version 450
+layout( push_constant ) uniform gltovkuniforms_struct 
+{ 
+  vec2 u_pos;
+  vec2 u_pos_secondary;
+  float u_r;
+  float u_g;
+  float u_b;
+} gltovkuniforms;
+
+void main() {
+    gl_Position = vec4(inPosition+gltovkuniforms.u_pos+gltovkuniforms.u_pos_secondary, 0.0, 1.0);
+    fragColor = inColor*vec3(gltovkuniforms.u_r, gltovkuniforms.u_g, gltovkuniforms.u_b);
+}
+				""";
+
+		if (!code.trim().replaceAll("\n", "").replaceAll(" ", "").equals(expected.trim().replaceAll("\n", "").replaceAll(" ", ""))) {
+			System.out.println("uniform_conversion actual result: ");
+			System.out.println(code);
+			System.out.println("\nuniform_conversion expected: ");
+			System.out.println(expected);
+			fail();
+		}
 	}
 	
 	
