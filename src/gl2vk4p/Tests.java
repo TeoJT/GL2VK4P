@@ -1633,7 +1633,7 @@ uniform float u_b;
 
 void main() {
     gl_Position = vec4(inPosition+u_pos+u_pos_secondary, 0.0, 1.0);
-    fragColor = inColor*vec3(u_r, u_g, u_b);
+    fragColor += inColor*vec3(u_r, u_g, u_b);
 }
 				""";
 		
@@ -1654,7 +1654,7 @@ layout( push_constant ) uniform gltovkuniforms_struct
 
 void main() {
     gl_Position = vec4(inPosition+gltovkuniforms.u_pos+gltovkuniforms.u_pos_secondary, 0.0, 1.0);
-    fragColor = inColor*vec3(gltovkuniforms.u_r, gltovkuniforms.u_g, gltovkuniforms.u_b);
+    fragColor += inColor*vec3(gltovkuniforms.u_r, gltovkuniforms.u_g, gltovkuniforms.u_b);
 }
 				""";
 
@@ -1665,6 +1665,10 @@ void main() {
 			System.out.println(expected);
 			fail();
 		}
+		System.out.println("uniform_conversion actual result: ");
+		System.out.println(code);
+		System.out.println("\nuniform_conversion expected: ");
+		System.out.println(expected);
 		
 		assertEquals(28, converter.vertUniformSize);
 	}
@@ -1764,6 +1768,61 @@ void main() {
 			System.out.println("uniform_conversion_fragment actual result: ");
 			System.out.println(code);
 			System.out.println("\nuniform_conversion_fragment expected: ");
+			System.out.println(expected);
+			fail();
+		}
+	}
+	
+	
+	@Test
+	public void space_out_symbols() {
+		String testString = "x+=x+x==x=x/=x/x*=x*x";
+		String expected = "x += x + x == x = x /= x / x *= x * x";
+		
+		String actual = GL2VKShaderConverter.spaceOutSymbols(testString);
+		
+		if (!actual.equals(expected)) {
+			System.out.println("space_out_symbols actual result: ");
+			System.out.println(actual);
+			System.out.println("\nspace_out_symbols expected: ");
+			System.out.println(expected);
+			fail();
+		}
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void replace_frag_out() {
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+		String code = 
+				"""
+void main() {
+    gl_FragColor = fragColor;
+}
+""";
+
+		String expected = 
+				"""
+#version 450
+layout(location = 0) out vec4 gl2vk_FragColor;
+
+void main() {
+    gl2vk_FragColor = fragColor;
+}
+""";
+
+		code = converter.replaceFragOut(code);
+		code = converter.appendVersion(code);
+
+
+		if (!code.trim().replaceAll("\n", "").replaceAll(" ", "").equals(expected.trim().replaceAll("\n", "").replaceAll(" ", ""))) {
+			System.out.println("replace_frag_out actual result: ");
+			System.out.println(code);
+			System.out.println("\nreplace_frag_out expected: ");
 			System.out.println(expected);
 			fail();
 		}

@@ -73,6 +73,56 @@ public class GL2VKShaderConverter {
 		}
 		return line;
 	}
+	
+	
+	public static String spaceOutSymbols(String line) {
+		line = line.replaceAll("\\+(?!=)", " + ");
+		line = line.replace(",", " , ");
+		line = line.replace("==", " == ");
+		line = line.replace("+=", " += ");
+		line = line.replace("-=", " -= ");
+		line = line.replace("*=", " *= ");
+		line = line.replace("/=", " /= ");
+		line = line.replace(">=", " >= ");
+		line = line.replace("<=", " <= ");
+		line = line.replace("!=", " != ");
+		line = line.replaceAll(">(?!=)", " > "); // Detect > but not >=
+		line = line.replaceAll("<(?!=)", " < "); // Detect < but not <=
+		line = line.replaceAll("!(?!=)", " ! "); // Detect > but not >=
+		line = line.replaceAll("&(?!=)", " & ");  // single &
+		line = line.replaceAll("\\|(?!=)", " | ");  // single |
+		line = line.replaceAll("-(?!=)", " - ");
+		line = line.replaceAll("\\*(?!=)", " * ");
+		line = line.replaceAll("\\/(?!=)", " / ");
+		line = line.replace("(", "( ");
+		line = line.replace(")", " )");
+		
+		// Regex failed on me so let's just program it ourselves for ==
+		String nline = "";
+		char[] arr = line.toCharArray();
+		for (int i = 0; i < arr.length; i++) {
+			try {
+				if (	arr[i-1] != '=' 
+						&& arr[i-1] != '+'
+						&& arr[i-1] != '-'
+						&& arr[i-1] != '*'
+						&& arr[i-1] != '/'
+						&& arr[i-1] != '&'
+						&& arr[i-1] != '|'
+						
+						&& arr[i] == '='
+						&& arr[i+1] != '=') {
+					nline += " = ";
+				} else nline += arr[i];
+			}
+			catch (RuntimeException e) {
+				nline += arr[i];
+			}
+		}
+		line = nline;
+		return line;
+	}
+	
 
 	// All methods are public so that they can be tested
 	public String removeComments(String source) {
@@ -323,26 +373,7 @@ public class GL2VKShaderConverter {
 
 			String reconstructedLine = "";
 			
-//			String[] elements = line.replaceAll("\t", "").trim().split("[ ,+\\-\\/*()^=]");
-			line = line.replace(",", " , ");
-			line = line.replace("+", " + ");
-			line = line.replace("-", " - ");
-			line = line.replace("*", " * ");
-			line = line.replace("\\/", " \\/ ");
-			line = line.replace("^", " ^ ");
-			line = line.replace("==", " == ");
-			line = line.replace(">=", " >= ");
-			line = line.replace("<=", " <= ");
-			line = line.replace("!=", " != ");
-			// TODO: fix this
-//			line = line.replaceAll("(?<![=])>(?!=)|(?<![=])", " > "); // Detect > but not >=
-//			line = line.replaceAll("(?<![=])<(?!=)|(?<![=])", " < "); // Detect > but not >=
-//			line = line.replaceAll("(?<![=])!(?!=)|(?<![=])", " ! "); // Detect > but not >=
-//			line = line.replaceAll("(?<![=])=(?![=])", " = ");  // single =
-//			line = line.replaceAll("(?<![&])&(?![&])", " & ");  // single &
-//			line = line.replaceAll("(?<![\\\\|])\\\\|(?![\\\\|])", " | ");  // single |
-			line = line.replace("(", "( ");
-			line = line.replace(")", " )");
+			line = spaceOutSymbols(line);
 
 			String[] elements = line.replaceAll("\t", "").trim().split(" ");
 			
@@ -350,6 +381,7 @@ public class GL2VKShaderConverter {
 				// Try catch block so I don't need to put index checks everywhere
 				try {
 					
+//					System.out.println(elements[i]);
 					if (uniformsSet.contains(elements[i])) {
 						// Replace with gltovkuniforms.[varname]
 						reconstructedLine += "gltovkuniforms."+elements[i];
@@ -370,6 +402,47 @@ public class GL2VKShaderConverter {
 		
 		
 		return reconstructed2;
+	}
+	
+	
+	
+	
+	// IMPORTANT: fragment only
+	public String replaceFragOut(String source) {
+
+		String[] lines = source.split("\n");
+		String reconstructed = "";
+		
+		for (String line : lines) {
+			
+			line = spaceOutSymbols(line);
+
+			String[] elements = line.replaceAll("\t", "").trim().split(" ");
+			String reconstructedLine = "";
+			for (int i = 0; i < elements.length; i++) {
+				// No try/catch block this time because no exceptions should happen there
+
+				// This time just one condition
+				if (elements[i].equals("gl_FragColor")) {
+					reconstructedLine += "gl2vk_FragColor ";
+				}
+				else {
+					reconstructedLine += elements[i]+" ";
+				}
+			}
+			reconstructed += reconstructedLine;
+			
+			reconstructed += "\n";
+		}
+		
+		// Then, we need to add 
+		// layout(location = 0) out vec4 gl2vk_FragColor;
+		// Let's just add it at the top
+		if (!reconstructed.contains("layout(location = 0) out vec4 gl2vk_FragColor;")) {
+			reconstructed = "layout(location = 0) out vec4 gl2vk_FragColor;\n"+reconstructed;
+		}
+		
+		return reconstructed;
 	}
 
 }
