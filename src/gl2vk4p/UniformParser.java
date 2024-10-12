@@ -78,8 +78,6 @@ public class UniformParser {
 								// Next element should be name
 								String uniformName = removeSemicolon(elements[i+1]);
 								
-								System.out.println(uniformName);
-								
 								// Remove ';' at the end
 								
 								// Unfortunately, we can't assign a uniform yet since the vertex and fragment

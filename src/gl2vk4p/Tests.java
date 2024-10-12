@@ -1665,8 +1665,109 @@ void main() {
 			System.out.println(expected);
 			fail();
 		}
+		
+		assertEquals(28, converter.vertUniformSize);
 	}
 	
+	
+	
+	
+	
+	
+	
+	// Expect a thrown exception because we did not convert a vertex shader.
+	@Test
+	public void uniforms_into_block_novertex() {
+		// First we need the vertex cache
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+		// Now for the actual test
+		String code = 
+				"""
+uniform vec2 u_pos;
+uniform vec2 u_pos_secondary;
+uniform float u_r;
+uniform float u_g;
+uniform float u_b;
+
+void main() {
+	gl_FragColor = fragColor;
+}
+				""";
+
+		
+		try {
+			// 2 here cus we usin' fragment
+			code = converter.convertUniforms(code, 2);
+			fail();
+		}
+		catch (RuntimeException e) {
+			// Expect exception
+		}
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void uniform_conversion_fragment() {
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+		// First vertex code
+		String vertex = 
+				"""
+uniform vec2 u_pos;
+uniform vec2 u_pos_secondary;
+uniform float u_r;
+uniform float u_g;
+uniform float u_b;
+
+void main() {
+    gl_Position = vec4(inPosition+u_pos+u_pos_secondary, 0.0, 1.0);
+    fragColor = inColor*vec3(u_r, u_g, u_b);
+}
+				""";
+		
+		vertex = converter.convertUniforms(vertex, 1);
+		vertex = converter.appendVersion(vertex);
+		
+		// Now for the fragment
+		String code = 
+				"""
+uniform vec2 u_cool;
+uniform vec2 u_someuniform;
+
+void main() {
+	gl_FragColor = fragColor;
+}
+				""";
+
+		code = converter.convertUniforms(code, 2);
+		code = converter.appendVersion(code);
+
+		String expected = 
+				"""
+#version 450
+layout( push_constant ) uniform gltovkuniforms_struct { 
+    layout( offset=28 ) vec2 u_cool;
+    vec2 u_someuniform;
+} gltovkuniforms;
+
+
+void main() {
+    gl_FragColor = fragColor;
+}
+				""";
+
+		if (!code.trim().replaceAll("\n", "").replaceAll(" ", "").equals(expected.trim().replaceAll("\n", "").replaceAll(" ", ""))) {
+			System.out.println("uniform_conversion_fragment actual result: ");
+			System.out.println(code);
+			System.out.println("\nuniform_conversion_fragment expected: ");
+			System.out.println(expected);
+			fail();
+		}
+	}
 	
 	// TODO: test using crazyAttribsCode.
 	

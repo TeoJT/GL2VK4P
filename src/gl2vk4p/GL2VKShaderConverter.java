@@ -10,7 +10,7 @@ public class GL2VKShaderConverter {
 	
 	// Public so we can check them in tests sorry not sorry.
 	public HashMap<String, Integer> vertexVaryingLocations = new HashMap<String, Integer>();
-	public int vertUniformSize = 0;
+	public int vertUniformSize = -1;
 	
 	private boolean fragmentBlocked = false;
 	private String blockedFragmentString = "";
@@ -238,15 +238,19 @@ public class GL2VKShaderConverter {
 	}
 	
 	
-	// TODO:
-	// vertex - keep track of size
-	// fragment - use vertex size to add layout(offset=...)
+	
+	
 	public String convertUniforms(String source, int type) {
 		// Quick check before doing any processing
 		if (type == FRAGMENT && vertUniformSize == -1) {
 			fragmentBlocked = true;
 			blockedFragmentString = source;
 			throw new RuntimeException();
+		}
+		else if (type == VERTEX) {
+			// Mark as 0 to mark that the vertex has run
+			// and to begin counting.
+			vertUniformSize = 0; 
 		}
 		
 		// Step 1: get uniforms, erase them
@@ -298,8 +302,11 @@ public class GL2VKShaderConverter {
 		String block = "layout(push_constant) uniform gltovkuniforms_struct {";
 		boolean once = true;
 		for (String u : uniforms) {
-			if (!once && type == FRAGMENT) {
+			// For a fragment shader we need to add offset to go into
+			// the constant push fragment range.
+			if (once && type == FRAGMENT) {
 				block += "\n    layout(offset="+vertUniformSize+") "+u;
+				once = false;
 			}
 			else block += "\n    "+u;
 		}
