@@ -50,6 +50,28 @@ public class GL2VKShaderConverter {
 	// 
 	// Also, remember to ignore comments, and switch on ignoremode if we're in a comment block /* */ 
 	public String convert(String source, int type) throws RuntimeException {
+		// C1: remove comments
+		source = removeComments(source);
+		
+		// C2: convert "attrib" to "in" VERTEX ONLY
+		if (type == VERTEX) source = attribute2In(source);
+		
+		// C3: convert "varying" to out VERTEX ONLY
+		if (type == VERTEX) source = varying2Out(source);
+		
+		// C4: convert "varying" to in FRAGMENT ONLY
+		// May throw exception if a vertex shader hasn't been compiled.
+		if (type == FRAGMENT) source = varying2In(source);
+		
+		// C5: convert uniforms (put into block, replace instances, add offset to fragment)
+		source = convertUniforms(source, type);
+		
+		// C6: convert gl_FragColor to gl2vk_FragColor and add out variable.
+		if (type == FRAGMENT) source = replaceFragOut(source);
+		
+		// C7: Finally, append the version
+		source = appendVersion(source); 
+		
 		
 		return source;
 	}
@@ -67,6 +89,7 @@ public class GL2VKShaderConverter {
 	
 	// TODO: also filter comment blocks /* */
 	private String filterComments(String line) {
+		// Single line
 		int index = line.indexOf("//");
 		if (index != -1) {
 			return line.substring(0, index);
@@ -131,9 +154,31 @@ public class GL2VKShaderConverter {
 		// Remove comments
 		// And then reconstruct it
 		String reconstructed = "";
+		boolean blockComment = false;
 		for (String line : lines) {
-			reconstructed += filterComments(line)+"\n";
+			// Single line
+			String lineb = filterComments(line)+"\n";
+			
+			// Multiline
+			for (int i = 0; i < lineb.length(); i++) {
+				try {
+					if ((lineb.charAt(i) == '/') && (lineb.charAt(i+1) == '*')) {
+						blockComment = true;
+					}
+					else if ((lineb.charAt(i-2) == '*') && (lineb.charAt(i-1) == '/')) {
+						blockComment = false;
+					}
+				}
+				catch (IndexOutOfBoundsException e) {
+					
+				}
+				
+				if (!blockComment) {
+					reconstructed += lineb.charAt(i);
+				}
+			}
 		}
+		
 		
 		return reconstructed;
 	}
@@ -347,21 +392,26 @@ public class GL2VKShaderConverter {
 			reconstructed1 += "\n";
 		}
 		
-		
-		// And now append the block at the top.
-		String block = "layout(push_constant) uniform gltovkuniforms_struct {";
-		boolean once = true;
-		for (String u : uniforms) {
-			// For a fragment shader we need to add offset to go into
-			// the constant push fragment range.
-			if (once && type == FRAGMENT) {
-				block += "\n    layout(offset="+vertUniformSize+") "+u;
-				once = false;
+		// uniform block code
+		// Only bother if we actually have any uniforms
+		if (!uniforms.isEmpty()) {
+			// And now append the block at the top.
+			String block = "layout(push_constant) uniform gltovkuniforms_struct {";
+			boolean once = true;
+			for (String u : uniforms) {
+				// For a fragment shader we need to add offset to go into
+				// the constant push fragment range.
+				if (once && type == FRAGMENT) {
+					block += "\n    layout(offset="+vertUniformSize+") "+u;
+					once = false;
+				}
+				else block += "\n    "+u;
 			}
-			else block += "\n    "+u;
+			block += "\n} gltovkuniforms;\n";
+			
+			// Add our uniform block to reconstructed
+			reconstructed1 = block+reconstructed1;
 		}
-		block += "\n} gltovkuniforms;\n";
-		reconstructed1 = block+reconstructed1;
 		
 		String reconstructed2 = "";
 		

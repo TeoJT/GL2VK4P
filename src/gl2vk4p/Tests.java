@@ -1327,6 +1327,78 @@ fragColor = inColor;
 	
 	
 	
+
+	@Test
+	public void remove_comments_multiline() {
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+		String code = 
+				"""
+#version 450
+
+/*
+  Part of the Processing project - http://processing.org
+
+  Copyright (c) 2012-21 The Processing Foundation
+  Copyright (c) 2004-12 Ben Fry and Casey Reas
+  Copyright (c) 2001-04 Massachusetts Institute of Technology
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation, version 2.1.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General
+  Public License along with this library; if not, write to the
+  Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+  Boston, MA  02111-1307  USA
+*/
+
+// Blah blah blah
+layout(location = 0) in vec2 inPosition;// position variable
+layout(location = 1) in vec3 inColor;// Color variable
+
+// Woah look varying
+layout(location = 0) out vec3 fragColor;
+
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);// Lalalalala
+fragColor = inColor;// Cool
+}
+				""";
+		
+		String result = converter.removeComments(code).trim().replaceAll("[\\n ]", "");
+		
+		String expected =
+				"""
+#version 450
+
+layout(location = 0) in vec2 inPosition;
+layout(location = 1) in vec3 inColor;
+
+
+layout(location = 0) out vec3 fragColor;
+
+void main() {
+gl_Position = vec4(inPosition, 0.0, 1.0);
+fragColor = inColor;
+}
+
+				""".trim().replaceAll("[\\n ]", "");
+		
+		if (!result.equals(expected)) {
+			System.out.println("remove_comments_multiline actual result: ");
+			System.out.println(result);
+			System.out.println("\nremove_comments_multiline expected: ");
+			System.out.println(expected);
+			fail();
+		}
+	}
+	
 	
 	
 	
@@ -1827,6 +1899,178 @@ void main() {
 			fail();
 		}
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	// Now for the big test.
+	// Let's convert a processing shader.
+String processingColorVert = """
+		/*
+  Part of the Processing project - http://processing.org
+
+  Copyright (c) 2012-21 The Processing Foundation
+  Copyright (c) 2004-12 Ben Fry and Casey Reas
+  Copyright (c) 2001-04 Massachusetts Institute of Technology
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation, version 2.1.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General
+  Public License along with this library; if not, write to the
+  Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+  Boston, MA  02111-1307  USA
+*/
+
+uniform mat4 transformMatrix;
+
+attribute vec4 position;
+attribute vec4 color;
+
+varying vec4 vertColor;
+
+void main() {
+  gl_Position = transformMatrix * position;
+    
+  vertColor = color;
+}
+		""";
+
+String processingColorFrag = """
+/*
+  Part of the Processing project - http://processing.org
+
+  Copyright (c) 2012-21 The Processing Foundation
+  Copyright (c) 2004-12 Ben Fry and Casey Reas
+  Copyright (c) 2001-04 Massachusetts Institute of Technology
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation, version 2.1.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General
+  Public License along with this library; if not, write to the
+  Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+  Boston, MA  02111-1307  USA
+*/
+
+#ifdef GL_ES
+precision mediump float;
+precision mediump int;
+#endif
+
+varying vec4 vertColor;
+
+void main() {
+  gl_FragColor = vertColor;
+}
+		""";
+
+String processingColorVertExpected = """
+#version 450
+
+layout( push_constant ) uniform gltovkuniforms_struct
+{
+  mat4 transformMatrix;
+} gltovkuniforms;
+
+
+layout(location = 0) in vec4 position;
+layout(location = 1) in vec4 color;
+
+layout(location = 0) out vec4 vertColor;
+
+void main() {
+  gl_Position = gltovkuniforms.transformMatrix * position;
+    
+  vertColor = color;
+}
+		""";
+
+String processingColorFragExpected = """
+#version 450
+layout(location = 0) out vec4 gl2vk_FragColor;
+
+#ifdef GL_ES
+precision mediump float;
+precision mediump int;
+#endif
+
+layout(location = 0) in vec4 vertColor;
+
+
+void main() {
+  gl2vk_FragColor = vertColor;
+}
+		""";
+	
+	
+	@Test
+	public void convert_1_vert() {
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+
+		String vertCode = converter.convert(processingColorVert, 1);
+
+
+		if (!vertCode.replaceAll("[\\t\\n ]", "").equals(processingColorVertExpected.replaceAll("[\\t\\n ]", ""))) {
+			System.out.println("convert_1_vert actual result: ");
+			System.out.println(vertCode);
+			System.out.println("\nconvert_1_vert expected: ");
+			System.out.println(processingColorVertExpected);
+			fail();
+		}
+	}
+	
+
+	
+	@Test
+	public void convert_1_frag() {
+		GL2VKShaderConverter converter = new GL2VKShaderConverter();
+		
+
+		converter.convert(processingColorVert, 1);
+
+		String fragCode = converter.convert(processingColorFrag, 2);
+
+
+		if (!fragCode.replaceAll("[\\t\\n ]", "").equals(processingColorFragExpected.replaceAll("[\\t\\n ]", ""))) {
+			System.out.println("convert_1_frag actual result: ");
+			System.out.println(fragCode);
+			System.out.println("\nconvert_1_frag expected: ");
+			System.out.println(processingColorFragExpected);
+			fail();
+		} else {
+
+		System.out.println("convert_1_frag actual result: ");
+		System.out.println(fragCode);
+		System.out.println("\nconvert_1_frag expected: ");
+		System.out.println(processingColorFragExpected);
+		
+		}
+	}
+	
 	
 	// TODO: test using crazyAttribsCode.
 	

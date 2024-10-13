@@ -7,8 +7,8 @@ precision mediump int;
 
 layout(location = 0) in vec4 vertColor;
 
-layout(location = 0) out vec4 gl2vkFragColor;
+layout(location = 0) out vec4 gl2vk_FragColor;
 
 void main() {
-  gl2vkFragColor = vertColor;
+  gl2vk_FragColor = vertColor;
 }
