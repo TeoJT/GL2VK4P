@@ -299,7 +299,15 @@ public class GL2VKPipeline {
             
             
             if (vertexSize+fragmentSize > system.getPushConstantsSizeLimit()) {
-            	System.err.println("WARNING  uniform size bigger than push constant limit "+system.getPushConstantsSizeLimit()+".");
+            	int size = system.getPushConstantsSizeLimit();
+            	Util.emergencyExit(
+            			"Uniform variables totals up to a size greater than the push constant limit of "+size+" bytes",
+            			"on this gpu.",
+            			"Unfortunately, uniform sizes greater than "+size+" bytes is not supported yet.",
+            			"The only solution for now is to remove some of the uniforms in your shader",
+            			"(both vertex and fragment) to reduce uniform size, I'm sorry :("
+    			);
+            	// Program will exit after this.
             }
             
         	// Here, for each uniform, we specify a pushConstant

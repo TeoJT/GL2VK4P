@@ -1579,7 +1579,8 @@ void main() {
 		code = converter.removeComments(code);
 		code = converter.appendVersion(code);
 		code = converter.attribute2In(code);
-		code = converter.varying2In(code);
+		// Passing in null shouldn't affect anything for the tests.
+		code = converter.varying2In(null, code);
 		
 		String expected =
 				"""
@@ -1629,7 +1630,7 @@ void main() {
 		code = converter.attribute2In(code);
 		
 		try {
-			converter.varying2In(code);
+			converter.varying2In(null, code);
 			fail();
 		}
 		catch (RuntimeException e) {
@@ -1658,7 +1659,7 @@ fragColor = inColor;
 }
 				""";
 		
-		code = converter.convertUniforms(code, 1);
+		code = converter.convertUniforms(null, code, 1);
 		code = converter.appendVersion(code);
 		
 		String expected = 
@@ -1709,7 +1710,7 @@ void main() {
 }
 				""";
 		
-		code = converter.convertUniforms(code, 1);
+		code = converter.convertUniforms(null, code, 1);
 		code = converter.appendVersion(code);
 		
 		String expected = 
@@ -1737,10 +1738,6 @@ void main() {
 			System.out.println(expected);
 			fail();
 		}
-		System.out.println("uniform_conversion actual result: ");
-		System.out.println(code);
-		System.out.println("\nuniform_conversion expected: ");
-		System.out.println(expected);
 		
 		assertEquals(28, converter.vertUniformSize);
 	}
@@ -1774,7 +1771,7 @@ void main() {
 		
 		try {
 			// 2 here cus we usin' fragment
-			code = converter.convertUniforms(code, 2);
+			code = converter.convertUniforms(null, code, 2);
 			fail();
 		}
 		catch (RuntimeException e) {
@@ -1805,7 +1802,7 @@ void main() {
 }
 				""";
 		
-		vertex = converter.convertUniforms(vertex, 1);
+		vertex = converter.convertUniforms(null, vertex, 1);
 		vertex = converter.appendVersion(vertex);
 		
 		// Now for the fragment
@@ -1819,7 +1816,7 @@ void main() {
 }
 				""";
 
-		code = converter.convertUniforms(code, 2);
+		code = converter.convertUniforms(null, code, 2);
 		code = converter.appendVersion(code);
 
 		String expected = 
@@ -2031,7 +2028,7 @@ void main() {
 		GL2VKShaderConverter converter = new GL2VKShaderConverter();
 		
 
-		String vertCode = converter.convert(processingColorVert, 1);
+		String vertCode = converter.convert(new GLShader(processingColorVert));
 
 
 		if (!vertCode.replaceAll("[\\t\\n ]", "").equals(processingColorVertExpected.replaceAll("[\\t\\n ]", ""))) {
@@ -2049,10 +2046,9 @@ void main() {
 	public void convert_1_frag() {
 		GL2VKShaderConverter converter = new GL2VKShaderConverter();
 		
+		converter.convert(new GLShader(processingColorVert));
 
-		converter.convert(processingColorVert, 1);
-
-		String fragCode = converter.convert(processingColorFrag, 2);
+		String fragCode = converter.convert(new GLShader(processingColorFrag));
 
 
 		if (!fragCode.replaceAll("[\\t\\n ]", "").equals(processingColorFragExpected.replaceAll("[\\t\\n ]", ""))) {
@@ -2061,13 +2057,6 @@ void main() {
 			System.out.println("\nconvert_1_frag expected: ");
 			System.out.println(processingColorFragExpected);
 			fail();
-		} else {
-
-		System.out.println("convert_1_frag actual result: ");
-		System.out.println(fragCode);
-		System.out.println("\nconvert_1_frag expected: ");
-		System.out.println(processingColorFragExpected);
-		
 		}
 	}
 	

@@ -75,4 +75,12 @@ public class Util {
 		if (mod == 0) return input;
 		return input+(m-mod);
 	}
+	
+	public static void emergencyExit(String... mssg) {
+		System.err.println("GL2VK EMERGENCY EXIT");
+		for (String s : mssg) {
+			System.err.println(s);
+		}
+		System.exit(1);
+	}
 }

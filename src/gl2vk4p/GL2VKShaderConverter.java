@@ -12,8 +12,17 @@ public class GL2VKShaderConverter {
 	public HashMap<String, Integer> vertexVaryingLocations = new HashMap<String, Integer>();
 	public int vertUniformSize = -1;
 	
-	private boolean fragmentBlocked = false;
-	private String blockedFragmentString = "";
+	public boolean fragmentBlocked = false;
+	public GLShader blockedShader = null;
+	
+	// To be called when creating a new program.
+	// You should call it once a vertex/fragment shader pair have been compiled.
+	public void reset() {
+		vertexVaryingLocations.clear();
+		vertUniformSize = -1;
+		fragmentBlocked = false;
+		blockedShader = null;
+	}
 	
 	
 	// To convert the shader from OpenGL glsl to Vulkan GLSL:
@@ -49,29 +58,32 @@ public class GL2VKShaderConverter {
 	// And why OpenGL has a big overhead.
 	// 
 	// Also, remember to ignore comments, and switch on ignoremode if we're in a comment block /* */ 
-	public String convert(String source, int type) throws RuntimeException {
+	public String convert(GLShader sh) throws RuntimeException {
+		// source changes
+		// sh.source doesn't change.
+		String source = sh.getSource();
+		
 		// C1: remove comments
 		source = removeComments(source);
 		
 		// C2: convert "attrib" to "in" VERTEX ONLY
-		if (type == VERTEX) source = attribute2In(source);
+		if (sh.type == VERTEX) source = attribute2In(source);
 		
 		// C3: convert "varying" to out VERTEX ONLY
-		if (type == VERTEX) source = varying2Out(source);
+		if (sh.type == VERTEX) source = varying2Out(source);
 		
 		// C4: convert "varying" to in FRAGMENT ONLY
 		// May throw exception if a vertex shader hasn't been compiled.
-		if (type == FRAGMENT) source = varying2In(source);
+		if (sh.type == FRAGMENT) source = varying2In(sh, source);
 		
 		// C5: convert uniforms (put into block, replace instances, add offset to fragment)
-		source = convertUniforms(source, type);
+		source = convertUniforms(sh, source, sh.type);
 		
 		// C6: convert gl_FragColor to gl2vk_FragColor and add out variable.
-		if (type == FRAGMENT) source = replaceFragOut(source);
+		if (sh.type == FRAGMENT) source = replaceFragOut(source);
 		
 		// C7: Finally, append the version
-		source = appendVersion(source); 
-		
+		source = appendVersion(source);
 		
 		return source;
 	}
@@ -281,8 +293,9 @@ public class GL2VKShaderConverter {
 	
 	
 	// IMPORTANT NODE: fragment shaders only
-	public String varying2In(String source) throws RuntimeException {
-		String original = source;
+	// Sorry for the inconsistancies
+	// GLShader sh should have its source unchanged.
+	public String varying2In(GLShader sh, String source) throws RuntimeException {
 		String[] lines = source.split("\n");
 		String reconstructed = "";
 		boolean block = false;
@@ -300,6 +313,12 @@ public class GL2VKShaderConverter {
 						// Name should come right after the type
 						String name = removeSemicolon(elements[i+2]);
 						
+						// If this condition is true, it means the fragment is compiled before 
+						// the vertex shader.
+						// Either that or there's a programming error (nothing we can do in this case)
+						// Luckily, there's a solution; halt converting (and
+						// compiling) the shader for now, come back to it after we
+						// (hopefully) compile the vertex shader.
 						if (!vertexVaryingLocations.containsKey(name)) {
 							// Mark as blocked and exit
 							block = true;
@@ -321,8 +340,27 @@ public class GL2VKShaderConverter {
 				}
 			}
 			if (block) {
+				// check if fragment is already blocked.
+				// If it is, it means we're compiling a fragment shader directly after
+				// compiling another fragment shader?
+				// In opengl this would be allowed, but not here! Because OpenGL is dumb 
+				// to emulate in Vulkan.
+				// Either way, this is improper use of the API and could cause really bad bugs,
+				// so emergency exit.
+				if (fragmentBlocked == true) {
+					Util.emergencyExit(
+							"glCompileShader()",
+							"Had to exit because a fragment shader was compiled directly after another",
+							"fragment shader, or there's a syntax error in your vertex/fragment shaders.",
+							"It is best practice to call glCompileShader() on the vertex, and then the fragment.",
+							"If you try to compile shaders out of order, gl2vk won't be able to track which",
+							"vertex/fragment shader pair belong to each other.\n",
+							"Try compiling using pure OpenGL to check for syntax errors, then try again with GL2VK."
+					);
+				}
+				
 				fragmentBlocked = true;
-				blockedFragmentString = original;
+				if (sh != null) blockedShader = sh;
 				throw new RuntimeException();
 			}
 			reconstructed += reconstructedLine;
@@ -334,12 +372,13 @@ public class GL2VKShaderConverter {
 	
 	
 	
-	
-	public String convertUniforms(String source, int type) {
+	// Need a GLShader for blocking.
+	// sh's source code should be unchanged from the beginning of the convert function.
+	public String convertUniforms(GLShader sh, String source, int type) {
 		// Quick check before doing any processing
 		if (type == FRAGMENT && vertUniformSize == -1) {
 			fragmentBlocked = true;
-			blockedFragmentString = source;
+			if (sh != null) blockedShader = sh;
 			throw new RuntimeException();
 		}
 		else if (type == VERTEX) {
