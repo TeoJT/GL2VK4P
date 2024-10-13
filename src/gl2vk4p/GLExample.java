@@ -1,13 +1,10 @@
 package gl2vk4p;
 
-import org.joml.Vector2f;
-import org.joml.Vector2fc;
-import org.joml.Vector3f;
-import org.joml.Vector3fc;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import org.joml.*;
+import org.joml.Math;
 
 public class GLExample {
 	GL2VK gl;
@@ -50,7 +47,8 @@ public class GLExample {
 //			trianglesSeparate();
 //			throttleTest();
 //			indices();
-			indicesUniform();
+//			indicesUniform();
+			coolIndicies();
 
 		}
 		catch (Exception e) {
@@ -106,6 +104,183 @@ public class GLExample {
     	indexBuffer.rewind();
 	}
 	
+	private void createIndicesSquareProcessingShader(ByteBuffer vertexBuffer, ByteBuffer colorBuffer, ByteBuffer indexBuffer) {
+
+    	vertexBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    	colorBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    	indexBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    	
+//        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+//        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+//        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+//        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+    	vertexBuffer.putFloat(-0.5f);
+    	vertexBuffer.putFloat(-0.5f);
+    	vertexBuffer.putFloat(0f);
+    	vertexBuffer.putFloat(1f);
+    	
+    	colorBuffer.putFloat(1f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(1f);
+
+    	vertexBuffer.putFloat(0.5f);
+    	vertexBuffer.putFloat(-0.5f);
+    	vertexBuffer.putFloat(0f);
+    	vertexBuffer.putFloat(1f);
+    	
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(1f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(1f);
+
+    	vertexBuffer.putFloat(0.5f);
+    	vertexBuffer.putFloat(0.5f);
+    	vertexBuffer.putFloat(0f);
+    	vertexBuffer.putFloat(1f);
+    	
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(1f);
+    	colorBuffer.putFloat(1f);
+
+    	vertexBuffer.putFloat(-0.5f);
+    	vertexBuffer.putFloat(0.5f);
+    	vertexBuffer.putFloat(0f);
+    	vertexBuffer.putFloat(1f);
+    	
+    	colorBuffer.putFloat(1f);
+    	colorBuffer.putFloat(0f);
+    	colorBuffer.putFloat(1f);
+    	colorBuffer.putFloat(1f);
+    	
+    	indexBuffer.putShort((short)0);
+    	indexBuffer.putShort((short)1);
+    	indexBuffer.putShort((short)2);
+    	indexBuffer.putShort((short)2);
+    	indexBuffer.putShort((short)3);
+    	indexBuffer.putShort((short)0);
+    	
+    	vertexBuffer.rewind();
+    	colorBuffer.rewind();
+    	indexBuffer.rewind();
+	}
+	
+	
+	
+	
+	public void coolIndicies() {
+
+		// Create the data
+    	ByteBuffer vertexBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 4);
+    	ByteBuffer colorBuffer = ByteBuffer.allocate(Float.BYTES * 6 * 4);
+    	ByteBuffer indexBuffer = ByteBuffer.allocate(Short.BYTES * 6);
+    	createIndicesSquareProcessingShader(vertexBuffer, colorBuffer, indexBuffer);
+    	
+    	// Gen buffers
+    	IntBuffer out = IntBuffer.allocate(3);
+    	gl.glGenBuffers(3, out);
+    	int glVertBuff = out.get(0);
+    	int glColBuff = out.get(1);
+    	int glIndexBuff = out.get(2);
+    	
+    	
+    	// Create our gpu program
+    	int program = gl.glCreateProgram();
+    	int vertShader = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+    	int fragShader = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
+    	
+    	// Shader source
+    	gl.glShaderSource(vertShader, Util.readFile("resources/shaders/gl/ColorVert.glsl"));
+    	gl.glShaderSource(fragShader, Util.readFile("resources/shaders/gl/ColorFrag.glsl"));
+    	// Compile the shaders
+    	gl.glCompileShader(vertShader);
+    	gl.glCompileShader(fragShader);
+    	// Check shaders
+		IntBuffer compileStatus = IntBuffer.allocate(1);
+		gl.glGetShaderiv(vertShader, GL2VK.GL_COMPILE_STATUS, compileStatus);
+		if (compileStatus.get(0) == GL2VK.GL_FALSE) {
+			System.out.println(gl.glGetShaderInfoLog(vertShader));
+			System.exit(1);
+		}
+		gl.glGetShaderiv(fragShader, GL2VK.GL_COMPILE_STATUS, compileStatus);
+		if (compileStatus.get(0) == GL2VK.GL_FALSE) {
+			System.out.println(gl.glGetShaderInfoLog(fragShader));
+			System.exit(1);
+		}
+    	// Attach the shaders
+    	gl.glAttachShader(program, vertShader);
+    	gl.glAttachShader(program, fragShader);
+    	// Don't need em anymore
+    	gl.glDeleteShader(vertShader);
+    	gl.glDeleteShader(fragShader);
+    	
+    	gl.glLinkProgram(program);
+
+    	
+		// Setup up attribs
+		int position = gl.glGetAttribLocation(program, "position");
+		int color = gl.glGetAttribLocation(program, "color");
+		
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, glVertBuff);
+    	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, vertexBuffer.capacity(), vertexBuffer, 0);
+		gl.glVertexAttribPointer(position, 4*4, 0, false, 4*4, 0);
+    	gl.glBindBuffer(GL2VK.GL_VERTEX_BUFFER, glColBuff);
+    	gl.glBufferData(GL2VK.GL_VERTEX_BUFFER, colorBuffer.capacity(), colorBuffer, 0);
+		gl.glVertexAttribPointer(color, 4*4, 0, false, 4*4, 0);
+
+    	gl.glBindBuffer(GL2VK.GL_INDEX_BUFFER, glIndexBuff);
+    	gl.glBufferData(GL2VK.GL_INDEX_BUFFER, indexBuffer.capacity(), indexBuffer, 0);
+    	
+		gl.useProgram(program);
+		
+		int transformMatrix = gl.getUniformLocation(program, "transformMatrix");
+		if (transformMatrix == -1) {
+			System.out.println("Missing transformMatrix!");
+			System.exit(1);
+		}
+		
+		
+		boolean multithreaded = false;
+		int threadIndex = 0;
+		float qtime = 0f;
+		
+		Matrix4f transform = new Matrix4f();
+		
+    	while (!gl.shouldClose()) {
+
+    		transform.identity();
+    		transform.rotateZ((float) (qtime * Math.toRadians(90)));
+//    		transform.lookAt(2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+//    		transform.perspective((float) Math.toRadians(45),
+//                    (float)1200 / (float)00, 0.1f, 10.0f);
+//    		transform.m11(transform.m11() * -1);
+    		
+    		qtime += 0.02f;
+    		
+    		
+    		gl.beginRecord();
+    		
+
+    		if (multithreaded) gl.selectNode((int)(threadIndex++)%gl.getNodesCount());
+    		else gl.selectNode(0);
+    		
+    		ByteBuffer buff = ByteBuffer.allocateDirect(64);
+    		buff.order(ByteOrder.LITTLE_ENDIAN);
+    		transform.get(buff);
+    		
+    		gl.glUniformMatrix4fv(transformMatrix, 1, false, buff);
+    		
+        	gl.glBindBuffer(GL2VK.GL_INDEX_BUFFER, glIndexBuff);
+        	
+    		gl.glDrawElements(0, 6, GL2VK.GL_UNSIGNED_SHORT, 0);
+    		gl.endRecord();
+    		
+//    		frameWait();
+    	}
+    	gl.close();
+	}
+	
 	
 	
 	public void indicesUniform() {
@@ -133,8 +308,8 @@ public class GLExample {
     	gl.glShaderSource(vertShader, Util.readFile("resources/shaders/uniform.vert"));
     	gl.glShaderSource(fragShader, Util.readFile("resources/shaders/uniform.frag"));
     	// Compile the shaders
-    	gl.glCompileShader(vertShader);
-    	gl.glCompileShader(fragShader);
+    	gl.glCompileVKShader(vertShader);
+    	gl.glCompileVKShader(fragShader);
     	// Check shaders
 		IntBuffer compileStatus = IntBuffer.allocate(1);
 		gl.glGetShaderiv(vertShader, GL2VK.GL_COMPILE_STATUS, compileStatus);
@@ -253,8 +428,8 @@ public class GLExample {
     	gl.glShaderSource(vertShader, Util.readFile("resources/shaders/shader.vert"));
     	gl.glShaderSource(fragShader, Util.readFile("resources/shaders/shader.frag"));
     	// Compile the shaders
-    	gl.glCompileShader(vertShader);
-    	gl.glCompileShader(fragShader);
+    	gl.glCompileVKShader(vertShader);
+    	gl.glCompileVKShader(fragShader);
     	// Attach the shaders
     	gl.glAttachShader(program, vertShader);
     	gl.glAttachShader(program, fragShader);
@@ -378,8 +553,8 @@ public class GLExample {
     	gl.glShaderSource(vertShader, Util.readFile("resources/shaders/shader.vert"));
     	gl.glShaderSource(fragShader, Util.readFile("resources/shaders/shader.frag"));
     	// Compile the shaders
-    	gl.glCompileShader(vertShader);
-    	gl.glCompileShader(fragShader);
+    	gl.glCompileVKShader(vertShader);
+    	gl.glCompileVKShader(fragShader);
     	// Attach the shaders
     	gl.glAttachShader(program, vertShader);
     	gl.glAttachShader(program, fragShader);
@@ -450,8 +625,8 @@ public class GLExample {
     	gl.glShaderSource(vertShader, Util.readFile("resources/shaders/shader.vert"));
     	gl.glShaderSource(fragShader, Util.readFile("resources/shaders/shader.frag"));
     	// Compile the shaders
-    	gl.glCompileShader(vertShader);
-    	gl.glCompileShader(fragShader);
+    	gl.glCompileVKShader(vertShader);
+    	gl.glCompileVKShader(fragShader);
     	// Attach the shaders
     	gl.glAttachShader(program, vertShader);
     	gl.glAttachShader(program, fragShader);

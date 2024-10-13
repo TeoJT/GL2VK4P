@@ -13,6 +13,7 @@ import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 
 public class GL2VK {
 	
@@ -317,6 +318,8 @@ public class GL2VK {
 		// Convert the shader to openGL
 		sh.source = shaderConverter.convert(sh.source, sh.type);
 		
+//		System.out.println(sh.source);
+		
 		glCompileVKShader(shader);
 	}
 	
@@ -482,6 +485,37 @@ public class GL2VK {
 		
 		
 		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, value0, value1);
+	}
+	
+	public void glUniform3f(int location, float value0, float value1, float value2) {
+		if (checkAndPrepareProgram() == false) return;
+		
+		GLUniform uniform = programs[boundProgram].getUniform(location);
+		
+		
+		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, value0, value1, value2);
+	}
+
+	
+	public void glUniform4f(int location, float value0, float value1, float value2, float value3) {
+		if (checkAndPrepareProgram() == false) return;
+		
+		GLUniform uniform = programs[boundProgram].getUniform(location);
+		
+		
+		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, value0, value1, value2, value3);
+	}
+	
+	// TODO: add other uniform functions.
+
+	public void glUniformMatrix4fv(int location, int count, boolean transpose, ByteBuffer mat) {
+		// TODO: warn if count is > 1
+		
+		if (checkAndPrepareProgram() == false) return;
+		
+		GLUniform uniform = programs[boundProgram].getUniform(location);
+		
+		system.nodePushConstants(programs[boundProgram].pipelineLayout, uniform.vertexFragment, uniform.offset, mat);
 	}
 	
 //	public void glUniform2f(int location, float value0, float value1) {

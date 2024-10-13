@@ -30,6 +30,7 @@ public class UniformParser {
 			bracketDepth += countChars(s, "{");
 			bracketDepth -= countChars(s, "}");
 			
+			
 			// If there's a change in bracketDepth to 0 and we're in uniformStruct
 			// state, it means we're at the end of the struct block.
 			if (
@@ -71,6 +72,7 @@ public class UniformParser {
 						// ["layout(", "offset" "=" ... ]
 						int size = -1;
 						for (int i = 0; i < elements.length; i++) {
+//							System.out.println(elements[i]);
 							size = typeToSize(elements[i]);
 							// Size found? Element that follows?
 							// Time to assign our variable.
@@ -108,8 +110,9 @@ public class UniformParser {
 			
 
 			// Uniforms
+//			System.out.println((bracketDepth == 0) + " " + s.contains(" uniform "));
 			if (
-					bracketDepth == 0 &&
+//					bracketDepth == 0 &&       // Not sure if this will break anything but I don't think it should...?
 					s.contains(" uniform ")
 			) {
 				// Lil filtering
