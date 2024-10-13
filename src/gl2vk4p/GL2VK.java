@@ -33,7 +33,38 @@ public class GL2VK {
 	public static final int GL_FALSE = 0;
 	
 	public static final int DEBUG_MODE = 42;
-	
+
+	// Shaders aren't actually anything significant, they're really temporary data structures
+	// to create a vulkan pipeline.
+	private class GLShader {
+		public String source = "";
+		public boolean successfulCompile = false;
+		public int type;
+		public SPIRV spirv = null;
+		public String log = "";
+		
+		// Use for vertex shaders only. See notes in glCompileShader
+		// for why we're oddly putting this here.
+		public ShaderAttribInfo attribInfo = null;
+		
+		// Once the vert and frag shaders are linked it will
+		// be combined into one ArrayList
+		public ArrayList<GLUniform> uniforms = new ArrayList<GLUniform>();
+		
+		public GLShader(int type) {
+			this.type = type;
+		}
+		
+		public void setUniforms(ArrayList<GLUniform> uniforms) {
+			this.uniforms = uniforms;
+			for (GLUniform u : uniforms) {
+				// I could and should do it the proper way to
+				// ensure GL_VERTEX_SHADER is the same meaning for GLUniform
+				// class but let's be real; it's an int with 2 different values.
+				u.vertexFragment = type;
+			}
+		}
+	}
 	
 	// Attrib pointers are the most stupid thing ever that
 	// we need an entire class to do it.
@@ -78,7 +109,9 @@ public class GL2VK {
 	private int boundProgram = 0;
 	private boolean changeProgram = true;
 	
-	// Converter needs to keep states between each glcompile()
+	// Used to convert shaders
+	// Is an instance because it keeps the state from the
+	// fragment shader.
 	private GL2VKShaderConverter shaderConverter = new GL2VKShaderConverter();
 	
 	
@@ -260,14 +293,14 @@ public class GL2VK {
 			warn("glShaderSource: shader "+shader+" doesn't exist.");
 		}
 		// TODO: convert from opengl-style glsl to vulkan glsl
-		shaders[shader].setSource(source);
+		shaders[shader].source = source;
 	}
 
 	public String glGetShaderSource(int shader) {
 		if (shaders[shader] == null) {
 			warn("glGetShaderSource: shader "+shader+" doesn't exist.");
 		}
-		return shaders[shader].getSource();
+		return shaders[shader].source;
 	}
 	
 	public void glDeleteShader(int shader) {
@@ -279,26 +312,10 @@ public class GL2VK {
 		GLShader sh = shaders[shader];
 		if (sh == null) {
 			warn("glCompileShader: shader "+shader+" doesn't exist.");
-			return;
 		}
 		
-		// Convert the shader to openGL glsl
-		try {
-			sh.setSource(shaderConverter.convert(sh));
-		}
-		// An exception here means that a fragment shader was compiled before a vertex shader.
-		// Good news is, we can still compile both even if fragment is converted first.
-		catch (RuntimeException e) {
-			if (sh.type == GL_FRAGMENT_SHADER) {
-				// For now, halt compilation and mark as a successful compilation
-				sh.successfulCompile = true;
-				return;
-			}
-			else {
-				warn("glCompileShader: convert threw exception on a vertex shader. This shouldn't happen.");
-				return;
-			}
-		}
+		// Convert the shader to openGL
+		sh.source = shaderConverter.convert(sh.source, sh.type);
 		
 		glCompileVKShader(shader);
 	}
@@ -308,7 +325,6 @@ public class GL2VK {
 		GLShader sh = shaders[shader];
 		if (sh == null) {
 			warn("glCompileShader: shader "+shader+" doesn't exist.");
-			return;
 		}
 		
 		ShaderKind shaderKind;
@@ -321,7 +337,7 @@ public class GL2VK {
 		else shaderKind = ShaderKind.VERTEX_SHADER;
 		
 		try {
-			sh.spirv = compileShader(sh.getSource(), shaderKind);
+			sh.spirv = compileShader(sh.source, shaderKind);
 			sh.successfulCompile = true;
 		}
 		catch (RuntimeException e) {
@@ -344,11 +360,11 @@ public class GL2VK {
 			// linking the program.
 			// Thanks, opengl, you're so messy that we have to do things weirdly.
 			if (sh.type == GL_VERTEX_SHADER) {
-				sh.attribInfo = new ShaderAttribInfo(sh.getSource());
+				sh.attribInfo = new ShaderAttribInfo(sh.source);
 			}
 
 			// Also let's parse the uniform shader too
-			sh.setUniforms(UniformParser.parseUniforms(sh.getSource()));
+			sh.setUniforms(UniformParser.parseUniforms(sh.source));
 		}
 	}
 	

@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDescription;
@@ -1579,8 +1580,7 @@ void main() {
 		code = converter.removeComments(code);
 		code = converter.appendVersion(code);
 		code = converter.attribute2In(code);
-		// Passing in null shouldn't affect anything for the tests.
-		code = converter.varying2In(null, code);
+		code = converter.varying2In(code);
 		
 		String expected =
 				"""
@@ -1608,6 +1608,7 @@ void main() {
 	
 	
 	// Expect a thrown exception because we did not convert a vertex shader.
+	@Disabled("Disabled due to using a feature that was removed, which now causes the program to exit.")
 	@Test
 	public void varying_to_in_novertex() {
 		// First we need the vertex cache
@@ -1630,7 +1631,7 @@ void main() {
 		code = converter.attribute2In(code);
 		
 		try {
-			converter.varying2In(null, code);
+			converter.varying2In(code);
 			fail();
 		}
 		catch (RuntimeException e) {
@@ -1659,7 +1660,7 @@ fragColor = inColor;
 }
 				""";
 		
-		code = converter.convertUniforms(null, code, 1);
+		code = converter.convertUniforms(code, 1);
 		code = converter.appendVersion(code);
 		
 		String expected = 
@@ -1710,7 +1711,7 @@ void main() {
 }
 				""";
 		
-		code = converter.convertUniforms(null, code, 1);
+		code = converter.convertUniforms(code, 1);
 		code = converter.appendVersion(code);
 		
 		String expected = 
@@ -1738,6 +1739,10 @@ void main() {
 			System.out.println(expected);
 			fail();
 		}
+		System.out.println("uniform_conversion actual result: ");
+		System.out.println(code);
+		System.out.println("\nuniform_conversion expected: ");
+		System.out.println(expected);
 		
 		assertEquals(28, converter.vertUniformSize);
 	}
@@ -1749,6 +1754,7 @@ void main() {
 	
 	
 	// Expect a thrown exception because we did not convert a vertex shader.
+	@Disabled("Disabled due to using a feature that was removed, which now causes the program to exit.")
 	@Test
 	public void uniforms_into_block_novertex() {
 		// First we need the vertex cache
@@ -1771,7 +1777,7 @@ void main() {
 		
 		try {
 			// 2 here cus we usin' fragment
-			code = converter.convertUniforms(null, code, 2);
+			code = converter.convertUniforms(code, 2);
 			fail();
 		}
 		catch (RuntimeException e) {
@@ -1802,7 +1808,7 @@ void main() {
 }
 				""";
 		
-		vertex = converter.convertUniforms(null, vertex, 1);
+		vertex = converter.convertUniforms(vertex, 1);
 		vertex = converter.appendVersion(vertex);
 		
 		// Now for the fragment
@@ -1816,7 +1822,7 @@ void main() {
 }
 				""";
 
-		code = converter.convertUniforms(null, code, 2);
+		code = converter.convertUniforms(code, 2);
 		code = converter.appendVersion(code);
 
 		String expected = 
@@ -2024,11 +2030,11 @@ void main() {
 	
 	
 	@Test
-	public void convert_1_vert() {
+	public void convert_vert() {
 		GL2VKShaderConverter converter = new GL2VKShaderConverter();
 		
 
-		String vertCode = converter.convert(new GLShader(processingColorVert));
+		String vertCode = converter.convert(processingColorVert, 1);
 
 
 		if (!vertCode.replaceAll("[\\t\\n ]", "").equals(processingColorVertExpected.replaceAll("[\\t\\n ]", ""))) {
@@ -2043,12 +2049,13 @@ void main() {
 
 	
 	@Test
-	public void convert_1_frag() {
+	public void convert_frag() {
 		GL2VKShaderConverter converter = new GL2VKShaderConverter();
 		
-		converter.convert(new GLShader(processingColorVert));
 
-		String fragCode = converter.convert(new GLShader(processingColorFrag));
+		converter.convert(processingColorVert, 1);
+
+		String fragCode = converter.convert(processingColorFrag, 2);
 
 
 		if (!fragCode.replaceAll("[\\t\\n ]", "").equals(processingColorFragExpected.replaceAll("[\\t\\n ]", ""))) {
@@ -2057,8 +2064,46 @@ void main() {
 			System.out.println("\nconvert_1_frag expected: ");
 			System.out.println(processingColorFragExpected);
 			fail();
+		} else {
+
+		System.out.println("convert_1_frag actual result: ");
+		System.out.println(fragCode);
+		System.out.println("\nconvert_1_frag expected: ");
+		System.out.println(processingColorFragExpected);
+		
 		}
 	}
+	
+	
+	
+	// Now for the ultimate test:
+	// Fittingly test #50 (maybe)
+	// Convert and compile a processing shader in openGL GLSL code.
+	@Test
+	public void convert_and_compile() {
+		GL2VK gl = new GL2VK(GL2VK.DEBUG_MODE);
+		glProgram1 = gl.glCreateProgram();
+		int vertShaderX = gl.glCreateShader(GL2VK.GL_VERTEX_SHADER);
+		int fragShaderX = gl.glCreateShader(GL2VK.GL_FRAGMENT_SHADER);
+		
+    	// Pass source code
+		gl.glShaderSource(vertShaderX, processingColorVert);
+		gl.glShaderSource(fragShaderX, processingColorFrag);
+		
+		gl.glCompileShader(vertShaderX);
+		gl.glCompileShader(fragShaderX);
+
+		IntBuffer out1 = IntBuffer.allocate(1);
+		gl.glGetShaderiv(vertShaderX, GL2VK.GL_COMPILE_STATUS, out1);
+		IntBuffer out2 = IntBuffer.allocate(1);
+		gl.glGetShaderiv(fragShaderX, GL2VK.GL_COMPILE_STATUS, out2);
+		
+		assertEquals(1, out1.get(0));
+		assertEquals(1, out2.get(0));
+	}
+	
+	
+	
 	
 	
 	// TODO: test using crazyAttribsCode.
